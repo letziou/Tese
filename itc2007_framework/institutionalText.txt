@@ -1,0 +1,13 @@
+# Using single-parameter constructor
+iw1 = InstitutionalWeighting.from_single_param("TWOINAROW", 5)
+print(iw1)
+# Output: InstitutionalWeighting(weightingType='TWOINAROW', paramOne=5, paramTwo=-1, paramThree=-1)
+
+# Using three-parameter constructor (FRONTLOAD)
+iw2 = InstitutionalWeighting.from_three_params("FRONTLOAD", 10, 3, 20)
+print(iw2)
+# Output: InstitutionalWeighting(weightingType='FRONTLOAD', paramOne=10, paramTwo=3, paramThree=20)
+
+# Invalid cases (will raise errors)
+# iw3 = InstitutionalWeighting.from_single_param("FRONTLOAD", 5) 
+# iw4 = InstitutionalWeighting.from_three_params("TWOINAROW", 5, 2, 10)
