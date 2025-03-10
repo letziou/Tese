@@ -7,7 +7,7 @@ from .room import Room
 from .booking import Booking
 from datetime import date, time
 
-problem = ExamTimetablingProblem.from_file("datasets/exam_comp_set2.exam")
+problem = ExamTimetablingProblem.from_file("datasets/exam_comp_set12.exam")
 
 bookings = [
     Booking(exam=Exam(0, 120, 100), period=Period(1, date(2005, 4, 15), time(9, 30), 210, 0), room=Room(101, 200, 0)),

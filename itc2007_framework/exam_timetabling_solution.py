@@ -38,40 +38,181 @@ class ExamTimetablingSolution:
             self.room_penalty()                 # Room penalties            (28)
         )
 
-    # TODO: Placeholder methods 
     def conflicting_exams(self) -> int:                 # Returns the number of conflicting exams scheduled in the same period
-        return 0
+        conflits = 0
+        for booking_a in self.bookings:
+            for booking_b in self.bookings:
+                if booking_a.exam.number == booking_b.exam.number: 
+                    continue
+
+                period_clash = booking_a.period.number == booking_b.period.number       # Checking if both exams are in the same period
+                students_share = self.problem.clash_matrix[booking_a.exam.number][booking_b.exam.number] > 0        # Checking if there are students that are enrolled in both exams
+                if period_clash and students_share:     # If yes than conflits are increased
+                    conflits += 1
+        
+        return conflits
 
     def overbooked_periods(self) -> int:                # Returns the number of periods where seating capacity is exceeded
-        return 0 
+        overbooked = 0
+        for period in self.problem.periods:
+            for room in self.problem.rooms:
+                period_room_bookings = [b for b in self.bookings if b.period.number == period.number and b.room.number == room.number]      # Getting all bookings for this period and room
+                seats_needed = sum(len(b.exam.students) for b in period_room_bookings)      # Calculating total seats needed
+                if seats_needed > room.capacity:        # If rooms needed is bigger than its capacity overbooked is increased
+                    overbooked += 1
+        
+        return overbooked
 
     def too_short_periods(self) -> int:                 # Returns the number of periods where the exam duration exceeds available time
-        return 0
+        too_short = 0
+        for booking in self.bookings:
+            if booking.exam.duration > booking.period.duration:     # Checking if exam duration is bigger than period duration, if yes too_short is increased 
+                too_short += 1
+
+        return too_short
 
     def period_constraint_violations(self) -> int:      # Returns the number of period-related constraint violations
-        return 0
+        period_violations = 0
+        for constraint in self.problem.period_hard_constraints:
+            # Finding the bookings associated with the exams in the constraint
+            booking_one = next((b for b in self.bookings if b.exam.number == constraint.exam_one), None)
+            booking_two = next((b for b in self.bookings if b.exam.number == constraint.exam_two), None)
+
+            if booking_one is None or booking_one is None:      # Skips if one of the exams is not yet allocated
+                continue
+
+            if constraint.constraint_type == "EXAM_COINCIDENCE":
+                if booking_one.period.number != booking_two.period.number:      # Checking if period is same for both exams, if not period_violations is increased
+                    period_violations += 1
+            
+            elif constraint.constraint_type == "EXCLUSION":     # Checking if period is not the same for both exams, if yes period_violations is increased
+                if booking_one.period.number == booking_two.period.number:
+                    period_violations += 1
+            
+            elif constraint.constraint_type == "AFTER":
+                if booking_one.period.get_datetime() > booking_two.period.get_datetime():       # Checking if exam one 
+                    period_violations += 1
+
+        return period_violations
 
     def room_constraint_violations(self) -> int:        # Returns the number of room-related constraint violations
-        return 0
+        room_violations = 0
+        for constraint in self.problem.room_hard_constraints:
+            if constraint.constraint_type == "ROOM_EXCLUSIVE":
+                booking = next((b for b in self.bookings if b.exam.number == constraint.exam_num), None)    # Finding the booking associated with the exam in the constraint
+                if booking is None:     # Skips if exam has not yet been placed
+                    continue
+
+                not_booked_alone = any(     # Checking if any other exam is scheduled to the same room and period
+                    b.room.number == booking.room.number and b.period.number == booking.period.number and b.exam.number != booking.exam.number
+                    for b in self.bookings
+                )
+                if not_booked_alone:        # If yes, room_violations is increased
+                    room_violations += 1
+        
+        return room_violations
 
     def two_in_a_row_penalty(self) -> int:              # Returns the penalty for scheduling two exams consecutively
-        return 0
+        row_penalty = 0
+        weighting = next((w for w in self.problem.institutional_weightings if w.weighting_type == "TWOINAROW"), None)       # Finding the weighting
+        if weighting is None:       # If weight is not defined then penalty is 0
+            return 0
+        
+        for booking_a in self.bookings:
+            for booking_b in self.bookings:
+                if booking_a == booking_b:      # Ignoring self comparison
+                    continue
+
+                in_a_row = abs(booking_a.period.number - booking_b.period.number) == 1      # Checking if periods are next to each other
+                same_day = booking_a.period.date == booking_b.period.date       # Checking if date is the same
+
+                if in_a_row and same_day:       # If exams are on neighboring periods and in the same day, then the penalty is added with the number of students in both exams multiplying by the weighting parameter
+                    row_penalty += weighting.paramOne * self.problem.clash_matrix[booking_a.exam.number][booking_b.exam.number]
+
+        return row_penalty
 
     def two_in_a_day_penalty(self) -> int:              # Returns the penalty for scheduling two exams on the same day
-        return 0
+        day_penalty = 0
+        weighting = next((w for w in self.problem.institutional_weightings if w.weighting_type == "TWOINADAY"), None)       # Finding the weighting
+        if weighting is None:       # If weight is not defined then penalty is 0
+            return 0
+        
+        for booking_a in self.bookings:
+            for booking_b in self.bookings:
+                if booking_a == booking_b:      # Ignoring self comparison
+                    continue
+
+                not_in_a_row = abs(booking_a.period.number - booking_b.period.number) != 1      # Checking if periods are not next to each other
+                same_day = booking_a.period.date == booking_b.period.date       # Checking if date is the same
+
+                if not_in_a_row and same_day:       # If exams are on not neighboring periods but in the same day, then the penalty is added with the number of students in both exams multiplying by the weighting parameter
+                    day_penalty += weighting.paramOne * self.problem.clash_matrix[booking_a.exam.number][booking_b.exam.number]
+
+        return day_penalty
 
     def frontload_penalty(self) -> int:                 # Returns the penalty for frontloading large exams
-        """."""
-        return 0
+        load_penalty = 0
+        weighting = next((w for w in self.problem.institutional_weightings if w.weighting_type == "FRONTLOAD"), None)       # Finding the weighting
+        if weighting is None:       # If weight is not defined then penalty is 0
+            return 0
+        
+        largest_exams = sorted(self.problem.exams, key=lambda e: len(e.students), reverse=True)[:weighting.paramOne]        # Sorting by descending order, then taking exams whose size are bigger then parameter one of FRONTLOAD
+        
+        # Determining last periods 
+        last_periods_index = max(0, len(self.problem.periods) - weighting.paramTwo)     
+        last_periods = self.problem.periods[last_periods_index:]
+
+        for exam in largest_exams:
+            exam_booked = next((b for b in self.bookings if b.exam.number == exam.number), None)        # Checking if exam is already booked
+            if exam_booked is None:      # If not skip
+                continue
+            
+            if any(p.number == exam_booked.period.number for p in last_periods):    # Checking if exam is in any of the last periods
+                load_penalty += weighting.paramThree
+
+        return load_penalty
 
     def mixed_durations_penalty(self) -> int:           # Returns the penalty for mixed exam durations in the same period
-        return 0
+        mixed_penalty = 0
+        weighting = next((w for w in self.problem.institutional_weightings if w.weighting_type == "NONMIXEDDURATIONS"), None)       # Finding the weighting
+        if weighting is None:       # If weight is not defined then penalty is 0
+            return 0
+        
+        for period in self.problem.periods:
+            for room in self.problem.rooms:
+                room_period_bookings = [b for b in self.bookings if b.period.number == period.number and b.room.number == room.number]      # Getting all bookings in the same period and room
+                if not room_period_bookings:        # Skipping if no exam is booked
+                    continue
+
+                unique_durations = {b.exam.duration for b in room_period_bookings}      # Getting unique durations from exams
+                num_unique_durations = len(unique_durations)
+                mixed_penalty += (num_unique_durations - 1) * weighting.paramOne    # If unique durations is above 1 then penalty is applied
+        return mixed_penalty
 
     def period_spread_penalty(self) -> int:             # Returns the penalty for scheduling exams too closely together
-        return 0
+        spread_penalty = 0
+        weighting = next((w for w in self.problem.institutional_weightings if w.weighting_type == "PERIODSPREAD"), None)       # Finding the weighting
+        if weighting is None:       # If weight is not defined then penalty is 0
+            return 0
+        
+        for booking_a in self.bookings:
+            for booking_b in self.bookings:
+                spread = booking_b.period.number - booking_a.period.number
+                if spread <= 0:     # Ignoring cases where exams are in the same period or earlier
+                    continue
+                
+                if spread <= weighting.paramOne:
+                    spread_penalty += self.problem.clash_matrix[booking_a.exam.number][booking_b.exam.number]
+        return spread_penalty
 
     def room_penalty(self) -> int:                      # Returns the penalty for room-related soft constraint violations
-        return 0
+        r_penalty = 0
+        for booking in self.bookings:
+            r_penalty += booking.room.penalty
+        return r_penalty
 
     def period_penalty(self) -> int:                    # Returns the penalty for period-related soft constraint violations
-        return 0
+        p_penalty = 0
+        for booking in self.bookings:
+            p_penalty += booking.period.penalty
+        return p_penalty
