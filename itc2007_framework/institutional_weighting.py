@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class InstitutionalWeighting:
-    weightingType: str          # institutional weight that can be TWOINAROW, TWOINADAY, PERIODSPREAD, NONMIXEDDURATIONS or FRONTLOAD
-    paramOne: int               # the parameter of the institutional weight or if FRONTLOAD number of largest exams
+    weightingType: str          # Institutional weight that can be TWOINAROW, TWOINADAY, PERIODSPREAD, NONMIXEDDURATIONS or FRONTLOAD
+    paramOne: int               # The parameter of the institutional weight or if FRONTLOAD number of largest exams
     paramTwo: int = -1          # -1 or if FRONTLOAD number of last periods to take into account
     paramThree: int = -1        # -1 or if FRONTLOAD the penalty
 

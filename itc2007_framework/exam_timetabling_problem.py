@@ -1,5 +1,6 @@
 import re
 import numpy as np
+from typing import List
 from datetime import date, time
 from .exam import Exam
 from .period import Period
@@ -9,7 +10,7 @@ from .room_hard_constraint import RoomHardConstraint
 from .institutional_weighting import InstitutionalWeighting
 
 class ExamTimetablingProblem:
-    def __init__(self, exams, periods, rooms, period_hard_constraints, room_hard_constraints, institutional_weightings):
+    def __init__(self, exams: List[Exam], periods: List[Period], rooms: List[Room], period_hard_constraints: List[PeriodHardConstraint], room_hard_constraints: List[RoomHardConstraint], institutional_weightings: List[InstitutionalWeighting]):
         self.exams = exams                                              # Exams to be booked
         self.periods = periods                                          # Periods in which exams can be booked
         self.rooms = rooms                                              # Rooms in which exams can be booked
@@ -17,7 +18,7 @@ class ExamTimetablingProblem:
         self.room_hard_constraints = room_hard_constraints              # Hard Constraints associated with rooms
         self.institutional_weightings = institutional_weightings        # Institutional weightings for soft constraints
 
-        # Initialize clash matrix
+        # Initializing clash matrix
         num_exams = len(exams)
         self.clash_matrix = np.zeros((num_exams, num_exams), dtype=int)
 

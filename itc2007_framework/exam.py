@@ -3,9 +3,17 @@ from typing import List
 
 @dataclass(frozen=True) # Makes the attributes immutable
 class Exam:
-    number: int             # identifier of the exam.
-    duration: int           # duration of the exam.
-    students: List[str]     # list of students partaking the exam
+    number: int             # Identifier of the exam.
+    duration: int           # Duration of the exam.
+    students: List[str]     # List of students taking the exam
+
+    def __hash__(self):
+        return hash(self.number)
+    
+    def __eq__(self, other):
+        if not isinstance(other, Exam):
+            return False
+        return self.number == other.number
 
     def __str__(self) -> str:
         return f"Exam(id={self.number}, duration={self.duration}, #students={len(self.students)})"
