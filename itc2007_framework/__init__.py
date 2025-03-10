@@ -9,5 +9,7 @@ from .room_hard_constraint import RoomHardConstraint
 from .booking import Booking
 from .institutional_weighting import InstitutionalWeighting
 from .exam_timetabling_problem import ExamTimetablingProblem
+from .exam_timetabling_solution import ExamTimetablingSolution
+from .solution import Solution
 
-__all__ = ["Exam", "Period", "Room", "PeriodHardConstraint", "RoomHardConstraint", "Booking", "InstitutionalWeighting", "ExamTimetablingProblem"]
+__all__ = ["Exam", "Period", "Room", "PeriodHardConstraint", "RoomHardConstraint", "Booking", "InstitutionalWeighting", "ExamTimetablingProblem", "ExamTimetablingSolution", "Solution"]

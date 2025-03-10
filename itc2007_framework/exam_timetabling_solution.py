@@ -1,6 +1,6 @@
+from typing import List
 from .exam_timetabling_problem import ExamTimetablingProblem
 from .booking import Booking
-from typing import List
 
 class ExamTimetablingSolution:
     def __init__(self, problem: ExamTimetablingProblem, bookings: List[Booking]): 

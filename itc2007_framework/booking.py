@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from itc2007_framework.exam import Exam
-from itc2007_framework.period import Period
-from itc2007_framework.room import Room
+from .exam import Exam
+from .period import Period
+from .room import Room
 
 @dataclass(frozen=True)
 class Booking:
