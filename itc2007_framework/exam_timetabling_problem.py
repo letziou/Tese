@@ -26,6 +26,8 @@ class ExamTimetablingProblem:
             for j, exam_two in enumerate(exams):
                 if i != j:
                     self.clash_matrix[i, j] = len(set(exam_one.students) & set(exam_two.students))
+        
+        self.exclusion_in_matrix()      # Filling clash_matrix with EXCLUSION constraint
 
     @classmethod
     def from_file(cls, file_path):  # Reads an ITC2007 problem instance from a file.
@@ -158,3 +160,45 @@ class ExamTimetablingProblem:
                 weightings.append(InstitutionalWeighting.from_single_param(weighting_type, param_one))
         
         return weightings
+    
+    def find_exams(self, exam_ids: List[int], exams: List[Exam]) -> List[Exam]:      # Returns a list of Exams corresponding to number list
+        return [exam for exam in exams if exam.number in exam_ids]
+    
+    def type_has_exams(self, period_constraint: str) -> List[PeriodHardConstraint]:      # Returns a list of constraints of a specific type 
+        return [constraint for constraint in self.period_hard_constraints if constraint.constraint_type == period_constraint]
+    
+    def exams_with_type(self, period_constraint: str, exam_number: int) -> List[PeriodHardConstraint]:      # Returns a list of constraints of a specific type involving the exam
+        return [constraint for constraint in self.period_hard_constraints if constraint.constraint_type == period_constraint and
+                (constraint.exam_one == exam_number or constraint.exam_two == exam_number)]
+    
+    def exams_with_coincidence(self, exam: Exam) -> List[Exam]:      # Returns a list of exams that are chained together
+        exam_numbers = [exam.number]
+
+        if not any (self.exams_with_type("EXAM_COINCIDENCE", exam.number)):
+            return self.find_exams(exam_numbers, self.exams) 
+        
+        self.exams_with_coincidence_aux(exam_numbers)
+        return self.find_exams(exam_numbers, self.exams)
+    
+    def exams_with_coincidence_aux(self, exam_numbers: List[int]):      # Recursively finds all exams that are linked together
+        exams_aux = exam_numbers.copy()
+
+        for exam_number in exams_aux:
+            for constraint in self.exams_with_type("EXAM_COINCIDENCE", exam_number):
+                exam_number_two = constraint.exam_one if constraint.exam_two == exam_number else constraint.exam_two
+                
+                if exam_number_two not in exam_numbers:
+                    exam_numbers.append(exam_number_two)
+
+        if len(exam_numbers) != len(exams_aux):      # If new exams were added recursion continues
+            self.exams_with_coincidence_aux(exam_numbers)
+
+    def exclusion_in_matrix(self):      # For each EXCLUSION constraint, both exams get marked in the clash_matrix
+        constraints = self.type_has_exams("EXCLUSION")
+        
+        for constraint in constraints:
+            self.clash_matrix[constraint.exam_one, constraint.exam_two] += 1
+            self.clash_matrix[constraint.exam_two, constraint.exam_one] += 1
+
+    def room_exclusivity(self, exam: Exam) -> bool:
+        return any(constraint for constraint in self.room_hard_constraints if constraint.exam_number == exam.number)
