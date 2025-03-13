@@ -1,0 +1,37 @@
+import sys
+sys.path.append('/home/letziou/5year/tese')
+
+from itc2007_framework import ExamTimetablingProblem, Solution
+
+problem = ExamTimetablingProblem.from_file("datasets/exam_comp_set12m.exam")
+
+solution = Solution(0, problem)
+
+print("set_exam, unset_exam and assigned_examinations")
+print(solution.assigned_examinations())
+solution.set_exam(solution.problem.periods[0], solution.problem.rooms[0], solution.problem.exams[0])
+print(solution.assigned_examinations())
+solution.unset_exam(solution.problem.exams[0])
+print(solution.assigned_examinations())
+solution.set_exam(solution.problem.periods[0], solution.problem.rooms[0], solution.problem.exams[0])
+print(solution.assigned_examinations())
+solution.unset_period_room_exam(solution.problem.periods[0], solution.problem.rooms[0], solution.problem.exams[0])
+print(solution.assigned_examinations())
+print("exam, room and period count")
+print(solution.exam_count() == len(problem.exams))
+print(solution.room_count() == len(problem.rooms))
+print(solution.period_count() == len(problem.periods))
+print("period and room from")
+solution.set_exam(solution.problem.periods[0], solution.problem.rooms[0], solution.problem.exams[0])
+solution.set_exam(solution.problem.periods[0], solution.problem.rooms[0], solution.problem.exams[1])
+solution.set_exam(solution.problem.periods[0], solution.problem.rooms[0], solution.problem.exams[2])
+solution.set_exam(solution.problem.periods[0], solution.problem.rooms[1], solution.problem.exams[3])
+print(solution.period_from(solution.problem.exams[0]))
+print(solution.room_from(solution.problem.exams[0]))
+print("is_exam_set_to")
+print(solution.is_exam_set_to(solution.problem.periods[0], solution.problem.rooms[1], solution.problem.exams[0]))
+print(solution.is_exam_set_to(solution.problem.periods[0], solution.problem.rooms[0], solution.problem.exams[0]))
+print("exams_from_period_room")
+print(solution.exams_from_period_room(solution.problem.periods[0], solution.problem.rooms[0]))
+print("exams_from_period")
+print(solution.exams_from_period(solution.problem.periods[0]))

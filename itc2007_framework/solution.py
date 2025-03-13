@@ -21,7 +21,7 @@ class Solution:
     def assigned_examinations(self) -> int:      # Returns number of assigned exams
         return len(self.bookings)
     
-    def examination_count(self) -> int:      # Returns number of exams within the problem
+    def exam_count(self) -> int:      # Returns number of exams within the problem
         return len(self.problem.exams)
     
     def room_count(self) -> int:      # Returns number of rooms within problem
@@ -72,3 +72,5 @@ class Solution:
                 exams.extend(self.pre_association[period][room])
         
         return exams if len(exams) > 0 else None
+    
+    

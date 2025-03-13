@@ -78,7 +78,7 @@ class ExamTimetablingSolution:
             booking_one = next((b for b in self.bookings if b.exam.number == constraint.exam_one), None)
             booking_two = next((b for b in self.bookings if b.exam.number == constraint.exam_two), None)
 
-            if booking_one is None or booking_one is None:      # Skips if one of the exams is not yet allocated
+            if booking_one is None or booking_two is None:      # Skips if one of the exams is not yet allocated
                 continue
 
             if constraint.constraint_type == "EXAM_COINCIDENCE":
@@ -90,7 +90,7 @@ class ExamTimetablingSolution:
                     period_violations += 1
             
             elif constraint.constraint_type == "AFTER":
-                if booking_one.period.get_datetime() > booking_two.period.get_datetime():       # Checking if exam one 
+                if booking_one.period.get_datetime() < booking_two.period.get_datetime():       # Checking if exam one 
                     period_violations += 1
 
         return period_violations
@@ -99,7 +99,7 @@ class ExamTimetablingSolution:
         room_violations = 0
         for constraint in self.problem.room_hard_constraints:
             if constraint.constraint_type == "ROOM_EXCLUSIVE":
-                booking = next((b for b in self.bookings if b.exam.number == constraint.exam_num), None)    # Finding the booking associated with the exam in the constraint
+                booking = next((b for b in self.bookings if b.exam.number == constraint.exam_number), None)    # Finding the booking associated with the exam in the constraint
                 if booking is None:     # Skips if exam has not yet been placed
                     continue
 
@@ -112,9 +112,9 @@ class ExamTimetablingSolution:
         
         return room_violations
 
-    def two_in_a_row_penalty(self) -> int:              # Returns the penalty for scheduling two exams consecutively
+    def two_in_a_row_penalty(self) -> int:              # Returns the penalty for scheduling two exams consecutively, for students
         row_penalty = 0
-        weighting = next((w for w in self.problem.institutional_weightings if w.weighting_type == "TWOINAROW"), None)       # Finding the weighting
+        weighting = next((w for w in self.problem.institutional_weightings if w.weightingType == "TWOINAROW"), None)       # Finding the weighting
         if weighting is None:       # If weight is not defined then penalty is 0
             return 0
         
@@ -133,7 +133,7 @@ class ExamTimetablingSolution:
 
     def two_in_a_day_penalty(self) -> int:              # Returns the penalty for scheduling two exams on the same day
         day_penalty = 0
-        weighting = next((w for w in self.problem.institutional_weightings if w.weighting_type == "TWOINADAY"), None)       # Finding the weighting
+        weighting = next((w for w in self.problem.institutional_weightings if w.weightingType == "TWOINADAY"), None)       # Finding the weighting
         if weighting is None:       # If weight is not defined then penalty is 0
             return 0
         
@@ -144,7 +144,6 @@ class ExamTimetablingSolution:
 
                 not_in_a_row = abs(booking_a.period.number - booking_b.period.number) != 1      # Checking if periods are not next to each other
                 same_day = booking_a.period.date == booking_b.period.date       # Checking if date is the same
-
                 if not_in_a_row and same_day:       # If exams are on not neighboring periods but in the same day, then the penalty is added with the number of students in both exams multiplying by the weighting parameter
                     day_penalty += weighting.paramOne * self.problem.clash_matrix[booking_a.exam.number][booking_b.exam.number]
 
@@ -152,7 +151,7 @@ class ExamTimetablingSolution:
 
     def frontload_penalty(self) -> int:                 # Returns the penalty for frontloading large exams
         load_penalty = 0
-        weighting = next((w for w in self.problem.institutional_weightings if w.weighting_type == "FRONTLOAD"), None)       # Finding the weighting
+        weighting = next((w for w in self.problem.institutional_weightings if w.weightingType == "FRONTLOAD"), None)       # Finding the weighting
         if weighting is None:       # If weight is not defined then penalty is 0
             return 0
         
@@ -174,7 +173,7 @@ class ExamTimetablingSolution:
 
     def mixed_durations_penalty(self) -> int:           # Returns the penalty for mixed exam durations in the same period
         mixed_penalty = 0
-        weighting = next((w for w in self.problem.institutional_weightings if w.weighting_type == "NONMIXEDDURATIONS"), None)       # Finding the weighting
+        weighting = next((w for w in self.problem.institutional_weightings if w.weightingType == "NONMIXEDDURATIONS"), None)       # Finding the weighting
         if weighting is None:       # If weight is not defined then penalty is 0
             return 0
         
@@ -191,7 +190,7 @@ class ExamTimetablingSolution:
 
     def period_spread_penalty(self) -> int:             # Returns the penalty for scheduling exams too closely together
         spread_penalty = 0
-        weighting = next((w for w in self.problem.institutional_weightings if w.weighting_type == "PERIODSPREAD"), None)       # Finding the weighting
+        weighting = next((w for w in self.problem.institutional_weightings if w.weightingType == "PERIODSPREAD"), None)       # Finding the weighting
         if weighting is None:       # If weight is not defined then penalty is 0
             return 0
         
