@@ -202,3 +202,8 @@ class ExamTimetablingProblem:
 
     def room_exclusivity(self, exam: Exam) -> bool:
         return any(constraint for constraint in self.room_hard_constraints if constraint.exam_number == exam.number)
+    
+    def exams_by_clashes(self) -> List[Exam]:
+        exam_clashes = [(exam, np.sum(self.clash_matrix[i])) for i, exam in enumerate(self.exams)]
+        sorted_exams = sorted(exam_clashes, key=lambda x: x[1], reverse=True)
+        return [exam for exam, _ in sorted_exams]

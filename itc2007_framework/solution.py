@@ -81,3 +81,14 @@ class Solution:
         bookings = self.dictionary_to_list()
         solution = ExamTimetablingSolution(self.problem, bookings)
         return solution.distance_to_feasibility()
+    
+    def fill(self, dictionary):
+        # Clearing existing bookings and pre_associations
+        self.bookings = {}
+        self.pre_association = {
+            period: {room: [] for room in self.problem.rooms} 
+            for period in self.problem.periods
+        }
+
+        for exam, (period, room) in dictionary.items():
+            self.set_exam(period, room, exam)

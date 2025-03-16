@@ -1,3 +1,4 @@
+import numpy as np 
 import sys
 sys.path.append('/home/letziou/5year/tese')
 
@@ -26,3 +27,7 @@ print(problem.exams_with_coincidence(problem.exams[60]))
 
 print(problem.room_exclusivity(problem.exams[13]))
 print(problem.room_exclusivity(problem.exams[14]))
+
+sorted_exams = problem.exams_by_clashes()
+for exam in sorted_exams:
+    print(f"Exam {exam.number} - Clashes: {np.sum(problem.clash_matrix[exam.number])}")
