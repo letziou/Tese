@@ -5,7 +5,7 @@ from itc2007_framework import ExamTimetablingProblem, Solution
 
 problem = ExamTimetablingProblem.from_file("datasets/exam_comp_set12m.exam")
 
-solution = Solution(0, problem)
+solution = Solution(problem)
 
 print("set_exam, unset_exam and assigned_examinations")
 print(solution.assigned_examinations())
@@ -35,3 +35,8 @@ print("exams_from_period_room")
 print(solution.exams_from_period_room(solution.problem.periods[0], solution.problem.rooms[0]))
 print("exams_from_period")
 print(solution.exams_from_period(solution.problem.periods[0]))
+print("calculate_score and dictionary_to_list")
+solution_exam_sol = Solution(problem)
+solution_exam_sol.set_exam(solution.problem.periods[1], solution.problem.rooms[0], solution.problem.exams[14])
+solution_exam_sol.set_exam(solution.problem.periods[1], solution.problem.rooms[0], solution.problem.exams[19])
+print(solution_exam_sol.calculate_score())

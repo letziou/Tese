@@ -13,7 +13,7 @@ class FeasibilityTester:
         if not all(exam.duration <= period.duration for exam in exams):      # Checking if assign_exam or any exam linked by EXAM_COINCIDENCE surpass period's length
             return False
         
-        for exam in exams: # 2
+        for exam in exams:
             if exam == assign_exam:
                 continue
             if solution.period_from(exam) != period and solution.room_from(exam) != None:      # Checking if assign_exam or any exam linked by EXAM_COINCIDENCE is set to another period than the one beign tested (room is checked for when period is returned none)

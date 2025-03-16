@@ -11,5 +11,6 @@ from .institutional_weighting import InstitutionalWeighting
 from .exam_timetabling_problem import ExamTimetablingProblem
 from .exam_timetabling_solution import ExamTimetablingSolution
 from .solution import Solution
+from .feasibility_tester import FeasibilityTester
 
-__all__ = ["Exam", "Period", "Room", "PeriodHardConstraint", "RoomHardConstraint", "Booking", "InstitutionalWeighting", "ExamTimetablingProblem", "ExamTimetablingSolution", "Solution"]
+__all__ = ["Exam", "Period", "Room", "PeriodHardConstraint", "RoomHardConstraint", "Booking", "InstitutionalWeighting", "ExamTimetablingProblem", "ExamTimetablingSolution", "Solution", "FeasibilityTester"]

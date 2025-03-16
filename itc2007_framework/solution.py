@@ -2,11 +2,12 @@ from typing import List, Dict
 from .exam import Exam
 from .period import Period
 from .room import Room
+from .booking import Booking
 from .exam_timetabling_problem import ExamTimetablingProblem
+from .exam_timetabling_solution import ExamTimetablingSolution
 
 class Solution:
-    def __init__(self, id_, problem: ExamTimetablingProblem):
-        self.id = id_      # Id of solution
+    def __init__(self, problem: ExamTimetablingProblem):
         self.fitness = -1      # Initial fitness of solution
         self.problem = problem      # Contains problem from ExamTimetablingProblem containing the information on exams, rooms, periods, constraints and weightings
         self.bookings: Dict[Exam, tuple] = {}     # Dictionary for tracking exam-period-room assignments
@@ -62,7 +63,7 @@ class Solution:
         return (self.bookings[exam][0] == period and self.bookings[exam][1] == room) if exam in self.bookings else False
 
     def exams_from_period_room(self, period: Period, room: Room) -> List[Exam]:      # Returns all exams assigned to a specific period and room
-        return self.pre_association[period][room] if period in self.pre_association and room in self.pre_association[period] else None
+        return self.pre_association[period][room] if period in self.pre_association and room in self.pre_association[period] else []
     
     def exams_from_period(self, period: Period) -> List[Exam]:      # Returns all exams assigned to a specific period
         exams = []
@@ -71,6 +72,12 @@ class Solution:
             for room in self.pre_association[period]:
                 exams.extend(self.pre_association[period][room])
         
-        return exams if len(exams) > 0 else None
+        return exams
     
+    def dictionary_to_list(self) -> List[Booking]:
+        return [Booking(exam, period, room) for exam, (period, room) in self.bookings.items()]
     
+    def calculate_score(self) -> int:
+        bookings = self.dictionary_to_list()
+        solution = ExamTimetablingSolution(self.problem, bookings)
+        return solution.distance_to_feasibility()
