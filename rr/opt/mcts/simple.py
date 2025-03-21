@@ -81,6 +81,12 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None,
                 msg="[i={:<5} t={:3.02f}] {}".format(i, t, sols),
             )
             node = root.select(sols)  # selection step
+            # 
+            if sols.best.value == 0:
+                info("Search complete, solution is feasible")
+                sols.best.is_opt = True
+                break  # solution found
+            #
             if node is None:
                 info("Search complete, solution is optimal")
                 sols.best.is_opt = True
