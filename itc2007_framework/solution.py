@@ -82,6 +82,11 @@ class Solution:
         solution = ExamTimetablingSolution(self.problem, bookings)
         return solution.distance_to_feasibility()
     
+    def calculate_score_periods(self) -> int:
+        bookings = self.dictionary_to_list()
+        solution = ExamTimetablingSolution(self.problem, bookings)
+        return solution.distance_to_feasibility_period()
+    
     def fill(self, dictionary):
         # Clearing existing bookings and pre_associations
         self.bookings = {}

@@ -6,8 +6,8 @@ for i in range(1,13):
     output_notebook = f"comp_set{i}.ipynb"
     
     params = {
-        "input_file_path": f"datasets/exam_comp_set{i}.exam",
-        "solution_file_path": f"solutions/solution{i}.txt"
+        "input_file_path": f"../datasets/exam_comp_set{i}.exam",
+        "solution_file_path": f"../solutions/solution{i}.txt"
     }
     
     print(f"Running iteration {i} with parameters: {params}")

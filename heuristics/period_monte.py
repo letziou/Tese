@@ -5,16 +5,15 @@ import sys
 sys.path.append('..')
 
 import rr.opt.mcts.simple as mcts
-from itc2007_framework import ExamTimetablingProblem, ExamTimetablingSolution, Solution
+from itc2007_framework import ExamTimetablingProblem, ExamTimetablingSolution, Solution, FeasibilityTester
 
 def run_monte_carlo(input_file, output_file, *args, **kwargs):
     problem = ExamTimetablingProblem.from_file(input_file)
-    solution = Solution(problem)
     mcts.config_logging(level="INFO")
-    root = ITCTreeNode.root(solution)
+    root = ITCTreeNode.root(problem)
     sols = mcts.run(root, *args, **kwargs, time_limit=3600)
     e_t_solution = ExamTimetablingSolution(problem, sols.best.data)
-    
+
     with open(output_file, "w") as file:
         file.write(f"{sols.best.data}\n")
         file.write(f"Hard constraints -> {e_t_solution.distance_to_feasibility()}\n")
@@ -34,45 +33,80 @@ def run_monte_carlo(input_file, output_file, *args, **kwargs):
 
 class ITCTreeNode(mcts.TreeNode):
     @classmethod
-    def root(cls, solution: Solution):
+    def root(cls, problem: ExamTimetablingProblem):
         root = cls()
-        root.exams_left = solution.problem.exams_by_clashes()
-        root.solution = solution
+        root.exams_left = problem.exams_by_clashes()
+        root.exams_assigned = {}
+        root.problem = problem
         root.upper_bound = None
         return root
 
     def copy(self):
         clone = mcts.TreeNode.copy(self)
         clone.exams_left = list(self.exams_left)
-        clone.solution = self.solution
+        clone.exams_assigned = dict(self.exams_assigned)
+        clone.problem = self.problem
         clone.upper_bound = None
         return clone
 
     def branches(self):
-       return self.solution.problem.periods if len(self.exams_left) > 0 else [] 
+        if len(self.exams_left) == 0:
+            return []
+        
+        exams = [exam for exam in self.exams_left if exam not in self.exams_assigned]
+        exam = exams.pop()
+        solution = Solution(self.problem)
+        solution.fill(self.exams_assigned)
+        feasibility_tester = FeasibilityTester(self.problem)
+        
+        feasible_periods = [
+            period for period in self.problem.periods
+            if feasibility_tester.feasible_period(solution, exam, period)
+        ]
+        return feasible_periods
 
+    # Random choice room
     def apply(self, period):
         exam = self.exams_left.pop()
-        self.solution.set_exam(period, random.choice(self.solution.problem.rooms), exam)
+        room = random.choice(self.problem.rooms)
+        self.exams_assigned[exam] = (period, room)
 
     def simulate(self):
         node = self.copy()
         while len(node.exams_left) > 0:
-            node.apply(random.choice(node.solution.problem.periods))  # monte carlo simulation
+            node.apply(random.choice(node.problem.periods))  # monte carlo simulation
+        
+        solution = Solution(node.problem)
+        solution.fill(node.exams_assigned)
         return mcts.Solution(
-            value=(node.solution.calculate_score()),
-            data=node.solution.dictionary_to_list(),
+            value=(solution.calculate_score_periods()),
+            data=solution.dictionary_to_list(),
         )
 
+    #def bound(self):
+    #    if self.upper_bound is None:
+    #        bound = self.total_value
+    #        capacity = self.capacity_left
+    #        for item in reversed(self.items_left):
+    #            if item.weight <= capacity:
+    #                bound += item.value
+    #                capacity -= item.weight
+    #            else:
+    #                bound += item.value * capacity / item.weight
+    #                break
+    #        self.upper_bound = bound
+    #    return self.upper_bound * -1  # flip bound
+    
 
 def main():
     choice = input("Would you like to run mcts on just one of the 12 datasets or all?\n")
     if choice.lower() == "all":
         for i in range(1,13):
             print(f"Dataset {i}")
-            run_monte_carlo(f"../datasets/exam_comp_set{i}.exam", f"../solutions/check{i}.txt", rng_seed=int(time.time()*1000))
+            run_monte_carlo(f"../datasets/exam_comp_set{i}.exam", f"../solutions/check{i}_period.txt", rng_seed=int(time.time()*1000))
     elif 0 <= int(choice.lower()) < 13:
-        run_monte_carlo(f"../datasets/exam_comp_set{choice.lower()}.exam", f"../solutions/check{choice.lower()}.txt", rng_seed=int(time.time()*1000))
+        run_monte_carlo(f"../datasets/exam_comp_set{choice.lower()}.exam", f"../solutions/check{choice.lower()}_period.txt", rng_seed=int(time.time()*1000))
+
 
 if __name__ == "__main__":
     main()

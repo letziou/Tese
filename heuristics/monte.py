@@ -11,7 +11,7 @@ def run_monte_carlo(input_file, output_file, *args, **kwargs):
     problem = ExamTimetablingProblem.from_file(input_file)
     mcts.config_logging(level="INFO")
     root = ITCTreeNode.root(problem)
-    sols = mcts.run(root, *args, **kwargs, time_limit=60*60)
+    sols = mcts.run(root, *args, **kwargs, time_limit=3600)
     e_t_solution = ExamTimetablingSolution(problem, sols.best.data)
 
     with open(output_file, "w") as file:
