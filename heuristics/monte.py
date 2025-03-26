@@ -11,7 +11,7 @@ def run_monte_carlo(input_file, output_file, *args, **kwargs):
     problem = ExamTimetablingProblem.from_file(input_file)
     mcts.config_logging(level="INFO")
     root = ITCTreeNode.root(problem)
-    sols = mcts.run(root, *args, **kwargs, time_limit=3600)
+    sols = mcts.run(root, *args, **kwargs, time_limit=7200)
     e_t_solution = ExamTimetablingSolution(problem, sols.best.data)
 
     with open(output_file, "w") as file:
@@ -38,7 +38,7 @@ class ITCTreeNode(mcts.TreeNode):
         root.exams_left = problem.exams_by_clashes()
         root.exams_assigned = {}
         root.problem = problem
-        root.upper_bound = None
+        root.lower_bound = None
         return root
 
     def copy(self):
@@ -46,15 +46,16 @@ class ITCTreeNode(mcts.TreeNode):
         clone.exams_left = list(self.exams_left)
         clone.exams_assigned = dict(self.exams_assigned)
         clone.problem = self.problem
-        clone.upper_bound = None
+        clone.lower_bound = None
         return clone
 
     def branches(self):
         if len(self.exams_left) == 0:
             return []
         
-        exams = [exam for exam in self.exams_left if exam not in self.exams_assigned]
-        exam = exams.pop()
+        exam = self.exams_left.pop()
+        print(len(self.exams_assigned))
+        print(exam)
         solution = Solution(self.problem)
         solution.fill(self.exams_assigned)
         feasibility_tester = FeasibilityTester(self.problem)
@@ -66,10 +67,10 @@ class ITCTreeNode(mcts.TreeNode):
         return feasible_periods
 
     # Random choice room
-    #def apply(self, period):
-    #    exam = self.exams_left.pop()
-    #    room = random.choice(self.problem.rooms)
-    #    self.exams_assigned[exam] = (period, room)
+    def simulation_apply(self, period):
+        exam = self.exams_left.pop()
+        room = random.choice(self.problem.rooms)
+        self.exams_assigned[exam] = (period, room)
 
     def apply(self, period):
         exam = self.exams_left.pop()
@@ -80,22 +81,31 @@ class ITCTreeNode(mcts.TreeNode):
         feasible_rooms = []
         room_selected = None
 
-        for room in self.problem.rooms:
+        for room in self.problem.rooms_exam_dictionary[exam]:
+            room_capacity = feasibility_tester.current_room_capacity(solution, period, room)
+            if room_capacity < self.problem.smallest_exam:
+                self.problem.room_period_full_dictionary[(room, period)] = True
+            
+            if self.problem.room_period_full_dictionary[(room, period)]:
+                continue
+
             if feasibility_tester.feasible_room(solution, exam, period, room):
-                room_capacity = feasibility_tester.current_room_capacity(solution, period, room)
                 if room_capacity == len(exam.students):     # If room capacity is exact for exam then the room is picked
                     room_selected = room
+                    break
                 feasible_rooms.append((room, room_capacity))
-
-        if not feasible_rooms:  # What to do in this case Infeasible?
-            return  
         
-        # Sorting by smallest capacity and choosing first one
-        feasible_rooms.sort(key=lambda x: x[1])
-        if room_selected is None:
+        if not feasible_rooms:  # If no room force one
+            feasible_rooms.append((random.choice(self.problem.rooms), 0))
+            return 
+        
+        if room_selected is None:      # If no exact match
+            feasible_rooms.sort(key=lambda x: x[1])      # Sorting by smallest capacity and choosing first one
             room_selected = feasible_rooms[0][0]
 
         self.exams_assigned[exam] = (period, room_selected)
+        if exam.exclusive:
+            self.problem.room_period_full_dictionary[(room, period)] = True
         
 
     def simulate(self):
@@ -111,18 +121,11 @@ class ITCTreeNode(mcts.TreeNode):
         )
 
     #def bound(self):
-    #    if self.upper_bound is None:
-    #        bound = self.total_value
-    #        capacity = self.capacity_left
-    #        for item in reversed(self.items_left):
-    #            if item.weight <= capacity:
-    #                bound += item.value
-    #                capacity -= item.weight
-    #            else:
-    #                bound += item.value * capacity / item.weight
-    #                break
-    #        self.upper_bound = bound
-    #    return self.upper_bound * -1  # flip bound
+    #    if self.lower_bound is None:
+    #        solution = self.simulate()
+    #        e_t_solution = ExamTimetablingSolution(self.problem, solution.data)
+    #        self.lower_bound = e_t_solution.distance_to_feasibility()
+    #    return self.lower_bound
     
 
 def main():

@@ -1,5 +1,6 @@
 import re
 import numpy as np
+import sys
 from typing import List
 from datetime import date, time
 from .exam import Exam
@@ -17,6 +18,9 @@ class ExamTimetablingProblem:
         self.period_hard_constraints = period_hard_constraints          # Hard Constraints associated with periods
         self.room_hard_constraints = room_hard_constraints              # Hard Constraints associated with rooms
         self.institutional_weightings = institutional_weightings        # Institutional weightings for soft constraints
+        self.smallest_exam = self.check_smallest_exam()
+        self.room_period_full_dictionary = self.dictionary_room_period()
+        self.rooms_exam_dictionary = self.check_rooms_exam_dictionary()
 
         # Initializing clash matrix
         num_exams = len(exams)
@@ -28,6 +32,7 @@ class ExamTimetablingProblem:
                     self.clash_matrix[i, j] = len(set(exam_one.students) & set(exam_two.students))
         
         self.exclusion_in_matrix()      # Filling clash_matrix with EXCLUSION constraint
+        self.exams_exclusive()
 
     @classmethod
     def from_file(cls, file_path):  # Reads an ITC2007 problem instance from a file.
@@ -160,6 +165,35 @@ class ExamTimetablingProblem:
                 weightings.append(InstitutionalWeighting.from_single_param(weighting_type, param_one))
         
         return weightings
+    
+    def check_smallest_exam(self) -> int:
+        smallest = sys.maxsize
+        for exam in self.exams:
+            capacity = len(exam.students)
+            if capacity < smallest:
+                smallest = capacity
+        
+        if smallest == sys.maxsize: smallest = 0
+        return smallest
+    
+    def dictionary_room_period(self):
+        return {(room, period): False for room in self.rooms for period in self.periods}
+    
+    def check_rooms_exam_dictionary(self):
+        rooms_exam_dictionary = {}
+        for exam in self.exams:
+            exam_rooms = []
+            for room in self.rooms:
+                if room.capacity > len(exam.students):
+                    exam_rooms.append(room)
+            rooms_exam_dictionary[exam] = exam_rooms
+        
+        return rooms_exam_dictionary
+
+    
+    def exams_exclusive(self):
+        for constraint in self.room_hard_constraints:
+            self.exams[constraint.exam_number].set_exclusive()
     
     def find_exams(self, exam_ids: List[int], exams: List[Exam]) -> List[Exam]:      # Returns a list of Exams corresponding to number list
         return [exam for exam in exams if exam.number in exam_ids]
