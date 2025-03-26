@@ -189,7 +189,6 @@ class ExamTimetablingProblem:
             rooms_exam_dictionary[exam] = exam_rooms
         
         return rooms_exam_dictionary
-
     
     def exams_exclusive(self):
         for constraint in self.room_hard_constraints:
@@ -239,5 +238,5 @@ class ExamTimetablingProblem:
     
     def exams_by_clashes(self) -> List[Exam]:
         exam_clashes = [(exam, np.sum(self.clash_matrix[i])) for i, exam in enumerate(self.exams)]
-        sorted_exams = sorted(exam_clashes, key=lambda x: x[1], reverse=True)
+        sorted_exams = sorted(exam_clashes, key=lambda x: (not x[0].exclusive, -x[1]))
         return [exam for exam, _ in sorted_exams]
