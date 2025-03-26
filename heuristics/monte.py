@@ -53,8 +53,7 @@ class ITCTreeNode(mcts.TreeNode):
         if len(self.exams_left) == 0:
             return []
         
-        exam = self.exams_left.pop()
-        print(len(self.exams_assigned))
+        exam = self.exams_left[0]
         print(exam)
         solution = Solution(self.problem)
         solution.fill(self.exams_assigned)
@@ -68,12 +67,12 @@ class ITCTreeNode(mcts.TreeNode):
 
     # Random choice room
     def simulation_apply(self, period):
-        exam = self.exams_left.pop()
+        exam = self.exams_left.pop(0)
         room = random.choice(self.problem.rooms)
         self.exams_assigned[exam] = (period, room)
 
     def apply(self, period):
-        exam = self.exams_left.pop()
+        exam = self.exams_left.pop(0)
         solution = Solution(self.problem)
         solution.fill(self.exams_assigned)
         feasibility_tester = FeasibilityTester(self.problem)
@@ -111,7 +110,7 @@ class ITCTreeNode(mcts.TreeNode):
     def simulate(self):
         node = self.copy()
         while len(node.exams_left) > 0:
-            node.apply(random.choice(node.problem.periods))  # monte carlo simulation
+            node.simulation_apply(random.choice(node.problem.periods))  # monte carlo simulation
         
         solution = Solution(node.problem)
         solution.fill(node.exams_assigned)
@@ -120,12 +119,12 @@ class ITCTreeNode(mcts.TreeNode):
             data=solution.dictionary_to_list(),
         )
 
-    #def bound(self):
-    #    if self.lower_bound is None:
-    #        solution = self.simulate()
-    #        e_t_solution = ExamTimetablingSolution(self.problem, solution.data)
-    #        self.lower_bound = e_t_solution.distance_to_feasibility()
-    #    return self.lower_bound
+    def bound(self):
+        if self.lower_bound is None:
+            solution = Solution(self.problem)
+            solution.fill(self.exams_assigned)
+            self.lower_bound = solution.calculate_score()
+        return self.lower_bound
     
 
 def main():
