@@ -54,7 +54,7 @@ class ITCTreeNode(mcts.TreeNode):
             return []
         
         exam = self.exams_left[0]
-        print(exam)
+        #print(exam)
         solution = Solution(self.problem)
         solution.fill(self.exams_assigned)
         feasibility_tester = FeasibilityTester(self.problem)
