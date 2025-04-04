@@ -81,6 +81,12 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None,
                 msg="[i={:<5} t={:3.02f}] {}".format(i, t, sols),
             )
             node = root.select(sols)  # selection step
+            # 
+            if sols.best.value == 0:
+                info("Search complete, solution is feasible")
+                sols.best.is_opt = True
+                break  # solution found
+            #
             if node is None:
                 info("Search complete, solution is optimal")
                 sols.best.is_opt = True
@@ -433,7 +439,7 @@ class TreeNode(object):
     # children, thereby allowing the search to deepen without forcing the full expansion of all
     # ancestors. Turn off to force parents to be fully expanded before starting to select their
     # children.
-    SELECTION_ALLOW_INTERLEAVING = False
+    SELECTION_ALLOW_INTERLEAVING = True
 
     # MCTS-related methods
     def select(self, sols):

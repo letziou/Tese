@@ -15,7 +15,8 @@ def run_monte_carlo(input_file, output_file, *args, **kwargs):
     e_t_solution = ExamTimetablingSolution(problem, sols.best.data)
 
     with open(output_file, "w") as file:
-        file.write(f"{sols.best.data}\n")
+        for booking in sols.best.data:
+            file.write(f"{(booking.exam.number, booking.period.number, booking.room.number)}\n")
         file.write(f"Hard constraints -> {e_t_solution.distance_to_feasibility()}\n")
         file.write(f"Conflicting exams -> {e_t_solution.conflicting_exams()}\n")
         file.write(f"Overbooked periods -> {e_t_solution.overbooked_periods()}\n")
@@ -114,9 +115,14 @@ class ITCTreeNode(mcts.TreeNode):
         
         solution = Solution(node.problem)
         solution.fill(node.exams_assigned)
-        return mcts.Solution(
-            value=(solution.calculate_score()),
-            data=solution.dictionary_to_list(),
+        infeas = solution.calculate_score()
+        if infeas > 0:
+            return mcts.Solution(value=mcts.Infeasible(infeas),
+                                 data=solution.dictionary_to_list())
+        else:
+            return mcts.Solution(
+                value=(infeas),
+                data=solution.dictionary_to_list(),
         )
 
     def bound(self):
@@ -132,10 +138,11 @@ def main():
     if choice.lower() == "all":
         for i in range(1,13):
             print(f"Dataset {i}")
-            run_monte_carlo(f"../datasets/exam_comp_set{i}.exam", f"../solutions/check{i}.txt", rng_seed=int(time.time()*1000))
-    elif 0 <= int(choice.lower()) < 13:
-        run_monte_carlo(f"../datasets/exam_comp_set{choice.lower()}.exam", f"../solutions/check{choice.lower()}.txt", rng_seed=int(time.time()*1000))
-
+            run_monte_carlo(f"../datasets/exam_comp_set{i}.exam", f"../solutions/solution_{i}.txt", rng_seed=int(time.time()*1000))
+    elif choice.lower().isdigit():
+        run_monte_carlo(f"../datasets/exam_comp_set{choice.lower()}.exam", f"../solutions/solution_{choice.lower()}.txt", rng_seed=int(time.time()*1000))
+    else:
+        run_monte_carlo(f"../datasets/exam_{choice.lower()}.exam", f"../solutions/solution_{choice.lower()}.txt", rng_seed=int(time.time()*1000))
 
 if __name__ == "__main__":
     main()
