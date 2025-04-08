@@ -52,7 +52,7 @@ class ITCTreeNode(mcts.TreeNode):
         clone.exams_left = list(self.exams_left)
         clone.exams_assigned = dict(self.exams_assigned)
         clone.problem = self.problem
-        clone.lower_bound = self.lower_bound
+        clone.lower_bound = None
         clone.num_exams = self.num_exams
         clone.unassigned_exams = set(self.unassigned_exams)
         clone.saturation_degrees = list(self.saturation_degrees)
@@ -174,6 +174,10 @@ class ITCTreeNode(mcts.TreeNode):
     # Normal simulate
     #def simulate(self):
     #    node = self.copy()
+    #
+    #    for exam_id in node.unassigned_exams:
+    #        node.exams_left.append(node.problem.exams[exam_id])
+    #        
     #    while len(node.exams_left) > 0:
     #        node.simulation_apply(random.choice(node.problem.periods))  # monte carlo simulation
     #    
@@ -193,15 +197,15 @@ class ITCTreeNode(mcts.TreeNode):
     def simulate(self):
         node = self.copy()
 
-        while node.unassigned_exams:
+        solution = Solution(node.problem)
+        solution.fill(node.exams_assigned)
+        feasibility_tester = FeasibilityTester(node.problem)
+
+        while solution.calculate_score() == 0:
             exam_id = node.next_exam()
             exam = node.problem.exams[exam_id]
 
             # Find feasible periods for this exam
-            solution = Solution(node.problem)
-            solution.fill(node.exams_assigned)
-            feasibility_tester = FeasibilityTester(node.problem)
-            
             feasible_periods = [
                 period for period in node.problem.periods
                 if feasibility_tester.feasible_period(solution, exam, period)
@@ -225,10 +229,9 @@ class ITCTreeNode(mcts.TreeNode):
             
             node.exams_left = [exam]
             node.simulation_apply(period)
+            solution.fill(node.exams_assigned)
         
-        solution = Solution(node.problem)
-        solution.fill(node.exams_assigned)
-        infeas = solution.calculate_score()
+        infeas = len(node.unassigned_exams)
         if infeas > 0:
             return mcts.Solution(value=mcts.Infeasible(infeas),
                                  data=solution.dictionary_to_list())
@@ -253,6 +256,9 @@ def main():
             run_monte_carlo(f"../datasets/exam_comp_set{i}.exam", f"../solutions/solution_{i}.txt", rng_seed=int(time.time()*1000))
     elif choice.lower().isdigit():
         run_monte_carlo(f"../datasets/exam_comp_set{choice.lower()}.exam", f"../solutions/solution_{choice.lower()}.txt", rng_seed=int(time.time()*1000))
+    elif choice.lower() == "instances":
+        choice = input("Which instance?\n")
+        run_monte_carlo(f"../instances/art0{choice.lower()}.exam", f"../solutions/instance_solution_{choice.lower()}.txt", rng_seed=int(time.time()*1000))
     else:
         run_monte_carlo(f"../datasets/exam_{choice.lower()}.exam", f"../solutions/solution_{choice.lower()}.txt", rng_seed=int(time.time()*1000))
 

@@ -20,13 +20,13 @@ class FeasibilityTester:
                 return False
 
         for exam in solution.exams_from_period(period):
-            if(self.problem.clash_matrix[exam.number][assign_exam.number] > 0):      # Checking if assign_exam has one or more students that is already assigned in another exam in the period being tested
+            if(self.problem.clash_matrix[exam.number][assign_exam.number] > 0):      # Checking if assign_exam has one or more students that is already assigned in another exam in the period being tested or EXCLUSION constraint
                 return False
 
         for period_constraint in self.problem.exams_with_type("AFTER", assign_exam.number):
-            if period_constraint.exam_two == assign_exam.number and solution.period_from(self.problem.exams[period_constraint.exam_one]) != None and solution.period_from(self.problem.exams[period_constraint.exam_one]) <= period.number:      # Checking if period for assign_exam is AFTER another exam from constraint
+            if period_constraint.exam_two == assign_exam.number and solution.period_from(self.problem.exams[period_constraint.exam_one]) != None and solution.period_from(self.problem.exams[period_constraint.exam_one]).number <= period.number:      # Checking if period for assign_exam is AFTER another exam from constraint
                 return False
-            if period_constraint.exam_one == assign_exam.number and solution.period_from(self.problem.exams[period_constraint.exam_two]) != None and solution.period_from(self.problem.exams[period_constraint.exam_two]) >= period.number:      # Another exam must occur AFTER assign_exam
+            if period_constraint.exam_one == assign_exam.number and solution.period_from(self.problem.exams[period_constraint.exam_two]) != None and solution.period_from(self.problem.exams[period_constraint.exam_two]).number >= period.number:      # Another exam must occur AFTER assign_exam
                 return False 
 
         for room in self.problem.rooms:
