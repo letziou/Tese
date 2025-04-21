@@ -9,8 +9,8 @@ from datetime import date, time
 problem = ExamTimetablingProblem.from_file("datasets/exam_comp_set12m.exam")
 
 bookings = [
-    Booking(exam=Exam(0, 120, 100), period=Period(1, date(2005, 4, 15), time(9, 30), 210, 0), room=Room(101, 200, 0)),
-    Booking(exam=Exam(1, 120, 100), period=Period(2, date(2005, 4, 15), time(9, 30), 210, 0), room=Room(102, 200, 0))
+    Booking(exam=Exam(0, 120, 100), period=Period(1, date(2005, 4, 15), time(9, 30), 210, 0), rooms=Room(101, 200, 0)),
+    Booking(exam=Exam(1, 120, 100), period=Period(2, date(2005, 4, 15), time(9, 30), 210, 0), rooms=Room(102, 200, 0))
 ]
 
 # To test function exclusion_in_matrix run program then go to line 30 comment the line and re-run program

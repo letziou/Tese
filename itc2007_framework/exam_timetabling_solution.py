@@ -61,13 +61,13 @@ class ExamTimetablingSolution:
 
     def overbooked_periods(self) -> int:                # Returns the number of periods where seating capacity is exceeded
         overbooked = 0
-        for period in self.problem.periods:
-            for room in self.problem.rooms:
-                period_room_bookings = [b for b in self.bookings if b.period.number == period.number and b.room.number == room.number]      # Getting all bookings for this period and room
-                seats_needed = sum(len(b.exam.students) for b in period_room_bookings)      # Calculating total seats needed
-                if seats_needed > room.capacity:        # If rooms needed is bigger than its capacity overbooked is increased
-                    overbooked += 1
-        
+        for booking in self.bookings:
+            if hasattr(booking.rooms, '__iter__') and not isinstance(booking.rooms, str):      # If booking.rooms is iterable (a list)
+                total_capacity = sum(room.capacity for room in booking.rooms)
+            else:
+                total_capacity = booking.rooms.capacity
+            if len(booking.exam.students) > total_capacity:
+                overbooked += 1
         return overbooked
 
     def too_short_periods(self) -> int:                 # Returns the number of periods where the exam duration exceeds available time
@@ -109,12 +109,28 @@ class ExamTimetablingSolution:
                 booking = next((b for b in self.bookings if b.exam.number == constraint.exam_number), None)    # Finding the booking associated with the exam in the constraint
                 if booking is None:     # Skips if exam has not yet been placed
                     continue
+                
+                # Check if booking.rooms is iterable
+                if hasattr(booking.rooms, '__iter__') and not isinstance(booking.rooms, str):
+                    rooms_to_check = booking.rooms
+                else:
+                    rooms_to_check = [booking.rooms]
 
-                not_booked_alone = any(     # Checking if any other exam is scheduled to the same room and period
-                    b.room.number == booking.room.number and b.period.number == booking.period.number and b.exam.number != booking.exam.number
-                    for b in self.bookings
-                )
-                if not_booked_alone:        # If yes, room_violations is increased
+                not_alone = False
+                for room in rooms_to_check:
+                    for b in self.bookings:
+                        if b.exam.number != booking.exam.number and b.period.number == booking.period.number:
+                            if hasattr(b.rooms, '__iter__') and not isinstance(b.rooms, str):
+                                if any(room.number == other_room.number for other_room in b.rooms):
+                                    not_alone = True
+                                    break
+                            else:
+                                if room.number == b.rooms.number:
+                                    not_alone = True
+                                    break
+                    if not_alone:
+                        break
+                if not_alone:
                     room_violations += 1
         
         return room_violations
@@ -186,7 +202,15 @@ class ExamTimetablingSolution:
         
         for period in self.problem.periods:
             for room in self.problem.rooms:
-                room_period_bookings = [b for b in self.bookings if b.period.number == period.number and b.room.number == room.number]      # Getting all bookings in the same period and room
+                room_period_bookings = []      # Getting all bookings in the same period and room
+                for booking in self.bookings:
+                    if booking.period.number == period.number:
+                        if hasattr(booking.rooms, '__iter__') and not isinstance(booking.rooms, str):
+                            if any(r.number == room.number for r in booking.rooms):
+                                room_period_bookings.append(booking)
+                        else:
+                            if booking.rooms.number == room.number:
+                                room_period_bookings.append(booking)
                 if not room_period_bookings:        # Skipping if no exam is booked
                     continue
 
@@ -214,7 +238,10 @@ class ExamTimetablingSolution:
     def room_penalty(self) -> int:                      # Returns the penalty for room-related soft constraint violations
         r_penalty = 0
         for booking in self.bookings:
-            r_penalty += booking.room.penalty
+            if hasattr(booking.rooms, '__iter__') and not isinstance(booking.rooms, str):
+                r_penalty += sum(room.penalty for room in booking.rooms)
+            else:
+                r_penalty += booking.rooms.penalty
         return r_penalty
 
     def period_penalty(self) -> int:                    # Returns the penalty for period-related soft constraint violations

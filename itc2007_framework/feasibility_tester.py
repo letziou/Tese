@@ -29,11 +29,7 @@ class FeasibilityTester:
             if period_constraint.exam_one == assign_exam.number and solution.period_from(self.problem.exams[period_constraint.exam_two]) != None and solution.period_from(self.problem.exams[period_constraint.exam_two]).number >= period.number:      # Another exam must occur AFTER assign_exam
                 return False 
 
-        for room in self.problem.rooms:
-            if self.feasible_room(solution, assign_exam, period, room):      #  Checking if at least one room is possible
-                return True
-        
-        return False
+        return True
     
     def feasible_room(self, solution: Solution, assign_exam: Exam, period: Period, room: Room) -> bool:
         capacity = self.current_room_capacity(solution, period, room)

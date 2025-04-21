@@ -5,7 +5,7 @@ notebook_path = "ITC07.ipynb"
 choice = input("Would you like to run mcts on just one of the 12 datasets or all?\n")
 if choice.lower() == "all":
     for i in range(1,13):
-        output_notebook = f"../notebooks/set{i}.ipynb"
+        output_notebook = f"notebooks/notebook_set{i}.ipynb"
     
         params = {
             "input_file_path": f"datasets/exam_comp_set{i}.exam",
@@ -16,7 +16,7 @@ if choice.lower() == "all":
         
         pm.execute_notebook(notebook_path, output_notebook, parameters=params)
 elif choice.lower().isdigit():
-    output_notebook = f"notebooks/set{choice.lower()}.ipynb"
+    output_notebook = f"notebooks/notebook_set{choice.lower()}.ipynb"
     
     params = {
         "input_file_path": f"datasets/exam_comp_set{choice.lower()}.exam",

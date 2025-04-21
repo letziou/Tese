@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 from .exam import Exam
 from .period import Period
 from .room import Room
@@ -7,7 +8,8 @@ from .room import Room
 class Booking:
     exam: Exam
     period: Period
-    room: Room
+    rooms: List[Room]
 
     def __str__(self) -> str:
-        return f"[[ {self.exam} | {self.period} | {self.room} ]]"
+        rooms_str = ", ".join(str(room) for room in self.rooms)
+        return f"[[ {self.exam} | {self.period} | {rooms_str} ]]"

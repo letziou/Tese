@@ -16,7 +16,11 @@ def run_monte_carlo(input_file, output_file, *args, **kwargs):
 
     with open(output_file, "w") as file:
         for booking in sols.best.data:
-            file.write(f"{(booking.exam.number, booking.period.number, booking.room.number)}\n")
+            if hasattr(booking.rooms, '__iter__') and not isinstance(booking.rooms, str):
+                room_numbers = [room.number for room in booking.rooms]
+                file.write(f"{(booking.exam.number, booking.period.number, room_numbers)}\n")
+            else:
+                file.write(f"{(booking.exam.number, booking.period.number, booking.rooms.number)}\n")
         file.write(f"Hard constraints -> {e_t_solution.distance_to_feasibility()}\n")
         file.write(f"Conflicting exams -> {e_t_solution.conflicting_exams()}\n")
         file.write(f"Overbooked periods -> {e_t_solution.overbooked_periods()}\n")
