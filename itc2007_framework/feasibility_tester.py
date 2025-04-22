@@ -45,6 +45,17 @@ class FeasibilityTester:
             
         return True
     
+    def feasible_rooms(self, solution: Solution, assign_exam: Exam, period: Period, room: Room) -> bool:
+        capacity = self.current_room_capacity(solution, period, room)
+        if self.problem.room_exclusivity(assign_exam) and capacity != room.capacity:      # Checks if exam has room constraint and is fully available
+            return False
+
+        for constraint in self.problem.room_hard_constraints:      # Checking if other exams allocated have EXCLUSIVE
+            if(solution.is_exam_set_to(period, room, self.problem.exams[constraint.exam_number])):
+                return False
+            
+        return True
+    
     def current_room_capacity(self, solution: Solution, period: Period, room: Room) -> int:
         capacity = room.capacity
         for exam in solution.exams_from_period_room(period, room):

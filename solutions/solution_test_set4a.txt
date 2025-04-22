@@ -1,0 +1,16 @@
+(0, 0, [0, 3])
+(1, 0, 3)
+Hard constraints -> 1
+Conflicting exams -> 0
+Overbooked periods -> 1
+Short Periods -> 0
+Period constraints -> 0
+Room constraints -> 0
+Soft constraints -> 40
+Two in a row -> 0
+Two in a day -> 0
+Period spread -> 0
+Mixed durations -> 0
+Frontload -> 10
+Period penalty -> 0
+Room penalty -> 30

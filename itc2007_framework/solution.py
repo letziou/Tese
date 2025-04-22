@@ -31,33 +31,13 @@ class Solution:
     def period_count(self) -> int:      # Returns number of periods within problem
         return len(self.problem.periods)
     
-    def set_exam(self, period: Period, room: Room, exam: Exam):      # Booking exam to period and room
-        self.bookings[exam] = (period, room)
-        self.pre_association[period][room].append(exam)
-
-    def unset_period_room_exam(self, period: Period, room: Room, exam: Exam):      # Removing exam from schedule 
-        if exam in self.bookings:
-            del self.bookings[exam]
-        
-        if period in self.pre_association and room in self.pre_association[period]:
-            if exam in self.pre_association[period][room]:
-                self.pre_association[period][room].remove(exam)
-
-    def unset_exam(self, exam: Exam):      # Removing exam from schedule
-        if exam in self.bookings:
-            period, room = self.bookings[exam]
-
-            del self.bookings[exam]
-
-            if period in self.pre_association and room in self.pre_association[period]:
-                if exam in self.pre_association[period][room]:
-                    self.pre_association[period][room].remove(exam)
-    
-    def period_from(self, exam: Exam) -> Period:      # Returns the period where an exam is scheduled
-        return self.bookings[exam][0] if exam in self.bookings else None
-    
-    def room_from(self, exam: Exam) -> Room:      # Returns the room where an exam is scheduled
-        return self.bookings[exam][1] if exam in self.bookings else None
+    def set_exam(self, period: Period, rooms, exam: Exam):      # Booking exam to period and room
+        self.bookings[exam] = (period, rooms)
+        if hasattr(rooms, '__iter__'):
+            for room in rooms:
+                self.pre_association[period][room].append(exam)
+        else:
+            self.pre_association[period][rooms].append(exam)
     
     def is_exam_set_to(self, period: Period, room: Room, exam: Exam) -> bool:      # Checks if an exam is set to a specific period and room
         return (self.bookings[exam][0] == period and self.bookings[exam][1] == room) if exam in self.bookings else False
