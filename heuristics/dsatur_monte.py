@@ -156,15 +156,11 @@ class ITCTreeNode(mcts.TreeNode):
             
             all_possible_rooms = []
             for room in self.problem.rooms:
-                print("ENTERED")
                 if not self.problem.room_period_full_dictionary[(room, period)]:
-                    print("ENTERED")
                     capacity = feasibility_tester.current_room_capacity(solution, period, room)
                     if capacity > 0 and feasibility_tester.feasible_rooms(solution, exam, period, room):
-                        print(f"ENTERED--{capacity}")
                         all_possible_rooms.append((room, capacity))
             
-            print(all_possible_rooms)
             if all_possible_rooms:
                 all_possible_rooms.sort(key=lambda x: x[1], reverse=True)
                 
@@ -201,10 +197,73 @@ class ITCTreeNode(mcts.TreeNode):
             print("SHOULD NOT HAPPEN -- simulation_apply")
 
         exam = self.exams_left.pop(0)
-        room = random.choice(self.problem.rooms)
-        self.exams_assigned[exam] = (period, room)
-
         exam_id = exam.number
+
+        solution = Solution(self.problem)
+        solution.fill(self.exams_assigned)
+        feasibility_tester = FeasibilityTester(self.problem)
+        students_needed = len(exam.students)
+        feasible_rooms = []
+        room_selected = None
+        
+        for room in self.problem.rooms_exam_dictionary[exam]:
+            if self.problem.room_period_full_dictionary[(room, period)]:
+                continue
+
+            room_capacity = feasibility_tester.current_room_capacity(solution, period, room)
+            if room_capacity == 0:
+                self.problem.room_period_full_dictionary[(room, period)] = True
+                continue
+
+            if feasibility_tester.feasible_room(solution, exam, period, room):
+                if room_capacity == students_needed:
+                    room_selected = room
+                    break
+                feasible_rooms.append((room, room_capacity))
+        
+        if not feasible_rooms and room_selected is None:      # If no feasible rooms, assigning a random room 
+            feasible_rooms.append((random.choice(self.problem.rooms), 0))
+        
+        if room_selected is None:
+            single_rooms = [(room, capacity) for room, capacity in feasible_rooms if capacity >= students_needed]
+            if single_rooms:
+                single_rooms.sort(key=lambda x: x[1])
+                room_selected = single_rooms[0][0]
+            else:
+                room_selected = random.choice(self.problem.rooms)
+
+        if room_selected is not None and feasibility_tester.current_room_capacity(solution, period, room_selected) >= students_needed:
+            self.exams_assigned[exam] = (period, room_selected)
+            if exam.exclusive:
+                self.problem.room_period_full_dictionary[(room_selected, period)] = True
+        else:
+            multiple_rooms = []
+            
+            all_possible_rooms = []
+            for room in self.problem.rooms:
+                if not self.problem.room_period_full_dictionary[(room, period)]:
+                    capacity = feasibility_tester.current_room_capacity(solution, period, room)
+                    if capacity > 0 and feasibility_tester.feasible_rooms(solution, exam, period, room):
+                        all_possible_rooms.append((room, capacity))
+            
+            if all_possible_rooms:
+                all_possible_rooms.sort(key=lambda x: x[1], reverse=True)
+                
+                combined_rooms = []
+                combined_capacity = 0
+                
+                for room, capacity in all_possible_rooms:      # Adding rooms until enough capacity
+                    combined_rooms.append(room)
+                    combined_capacity += capacity
+                    if combined_capacity >= students_needed:
+                        multiple_rooms = combined_rooms
+                        break
+            
+            if not multiple_rooms:
+                multiple_rooms = [room_selected]
+            
+            self.exams_assigned[exam] = (period, multiple_rooms)
+
         self.unassigned_exams.remove(exam_id)
 
         # Updating saturation degrees
@@ -246,14 +305,17 @@ class ITCTreeNode(mcts.TreeNode):
         feasibility_tester = FeasibilityTester(node.problem)
 
         while solution.calculate_score() == 0:
+            if not node.unassigned_exams:
+                break
+
             exam_id = node.next_exam()
             exam = node.problem.exams[exam_id]
 
             # Find feasible periods for this exam
-            feasible_periods = [
-                period for period in node.problem.periods
-                if feasibility_tester.feasible_period(solution, exam, period)
-            ]
+            feasible_periods = []
+            for period in node.problem.periods:
+                if feasibility_tester.feasible_period(solution, exam, period):
+                    feasible_periods.append(period)
 
             if not feasible_periods:
                 period = random.choice(node.problem.periods)      # If no feasible period, assigning a random period

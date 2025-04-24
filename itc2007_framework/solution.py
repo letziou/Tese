@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Union
 from .exam import Exam
 from .period import Period
 from .room import Room
@@ -41,6 +41,18 @@ class Solution:
     
     def is_exam_set_to(self, period: Period, room: Room, exam: Exam) -> bool:      # Checks if an exam is set to a specific period and room
         return (self.bookings[exam][0] == period and self.bookings[exam][1] == room) if exam in self.bookings else False
+    
+    def period_from(self, exam: Exam) -> Period:      # Returns the period where an exam is scheduled
+        return self.bookings[exam][0] if exam in self.bookings else None
+    
+    def rooms_from(self, exam: Exam) -> List[Room]:      # Returns the rooms where an exam is scheduled
+        return self.bookings[exam][1] if exam in self.bookings else None
+    
+    def room_from(self, exam: Exam) -> Union[Room, List[Room]]:      # Returns rooms (or first room for compatibility)
+        rooms = self.rooms_from(exam)
+        if rooms and isinstance(rooms, list) and len(rooms) > 0:
+            return rooms[0]  # Return first room for backward compatibility
+        return rooms
 
     def exams_from_period_room(self, period: Period, room: Room) -> List[Exam]:      # Returns all exams assigned to a specific period and room
         return self.pre_association[period][room] if period in self.pre_association and room in self.pre_association[period] else []
