@@ -121,7 +121,7 @@ class ITCTreeNode(mcts.TreeNode):
         feasible_rooms = []
         room_selected = None
         
-        for room in self.problem.rooms_exam_dictionary[exam]:
+        for room in self.problem.rooms:
             if self.problem.room_period_full_dictionary[(room, period)]:
                 continue
 
@@ -206,7 +206,7 @@ class ITCTreeNode(mcts.TreeNode):
         feasible_rooms = []
         room_selected = None
         
-        for room in self.problem.rooms_exam_dictionary[exam]:
+        for room in self.problem.rooms:
             if self.problem.room_period_full_dictionary[(room, period)]:
                 continue
 
@@ -341,11 +341,12 @@ class ITCTreeNode(mcts.TreeNode):
         if infeas > 0:
             return mcts.Solution(value=mcts.Infeasible(infeas),
                                  data=solution.dictionary_to_list())
+        elif infeas == 0 and solution.calculate_score() != 0:
+            return mcts.Solution(value=(infeas),
+                                 data=solution.dictionary_to_list(),)
         else:
-            return mcts.Solution(
-                value=(infeas),
-                data=solution.dictionary_to_list(),
-        )
+            return mcts.Solution(value=(infeas),
+                                 data=solution.dictionary_to_list(),)
 
     def bound(self):
         if self.lower_bound is None:

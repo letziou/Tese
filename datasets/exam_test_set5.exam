@@ -41,7 +41,7 @@
 100, 10
 [PeriodHardConstraints]
 12, EXAM_COINCIDENCE, 7
-8, EXAM_COINCIDENCE, 11
+8, EXAM_COINCIDENCE, 1
 [RoomHardConstraints]
 [InstitutionalWeightings]
 TWOINAROW, 9
