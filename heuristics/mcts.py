@@ -28,8 +28,7 @@ class ExamTimetableState:
     def is_terminal(self):
         return len(self.unassigned_exams) == 0
     
-    def next_exam(self):
-        """Select the next exam to schedule using the DSatur heuristic."""
+    def next_exam(self):      # Select the next exam to schedule using the DSatur heuristic.
         if not self.unassigned_exams:
             return None
         
@@ -55,7 +54,7 @@ class ExamTimetableState:
         
         return selected_exam
     
-    def get_legal_actions(self):
+    def get_legal_actions(self):      # Creation of branches
         exam_id = self.next_exam()
         if exam_id is None:
             return []
@@ -69,36 +68,83 @@ class ExamTimetableState:
         actions = []
         for period in self.problem.periods:
             if feasibility_tester.feasible_period(solution, exam, period):
-                for room in self.problem.rooms_exam_dictionary[exam]:
-                    if self.problem.room_period_full_dictionary.get((room, period), False):
-                        continue
-                        
-                    room_capacity = feasibility_tester.current_room_capacity(solution, period, room)
-                    if room_capacity < self.problem.smallest_exam:
-                        self.problem.room_period_full_dictionary[(room, period)] = True
-                        continue
-                        
-                    if feasibility_tester.feasible_room(solution, exam, period, room):
-                        actions.append((exam, period, room))
+                single_room = self._find_single_room(solution, exam, period, feasibility_tester)
+                if single_room:
+                    actions.append((exam, period, single_room))
+                else:
+                    multiple_rooms = self._find_multiple_rooms(solution, exam, period, feasibility_tester)
+                    if multiple_rooms:
+                        actions.append((exam, period, multiple_rooms))
         
         return actions
     
-    def apply_action(self, action):
-        exam, period, room = action
+    def _find_single_room(self, solution, exam, period, feasibility_tester):
+        students_needed = len(exam.students)
+        feasible_rooms = []
+        
+        for room in self.problem.rooms:
+            if self.problem.room_period_full_dictionary[room, period]:
+                continue
+
+            room_capacity = feasibility_tester.current_room_capacity(solution, period, room)
+            if room_capacity < students_needed:
+                continue
+
+            if feasibility_tester.feasible_room(solution, exam, period, room):
+                if room_capacity == students_needed:
+                    return room
+                feasible_rooms.append((room, room_capacity))
+        
+        if feasible_rooms:      # Find best-fit room (smallest room that fits)
+            feasible_rooms.sort(key=lambda x: x[1])   
+            return feasible_rooms[0][0]
+        
+        return None
+    
+    def _find_multiple_rooms(self, solution, exam, period, feasibility_tester):
+        students_needed = len(exam.students)
+        all_possible_rooms = []
+        
+        for room in self.problem.rooms:
+            if not self.problem.room_period_full_dictionary[room, period]:
+                capacity = feasibility_tester.current_room_capacity(solution, period, room)
+                if capacity > 0 and feasibility_tester.feasible_rooms(solution, exam, period, room):
+                    all_possible_rooms.append((room, capacity))
+        
+        if not all_possible_rooms:
+            return [random.choice(self.problem.rooms)]
+        
+        all_possible_rooms.sort(key=lambda x: x[1], reverse=True)
+        combined_rooms = []
+        combined_capacity = 0
+        
+        for room, capacity in all_possible_rooms:
+            combined_rooms.append(room)
+            combined_capacity += capacity
+            if combined_capacity >= students_needed:
+                return combined_rooms
+            
+        return [random.choice(self.problem.rooms)]      # If not enough rooms just send random room
+
+    def apply_action(self, action):      # Application of branch
+        exam, period, room_info = action
         
         # Create a new state with the additional assignment
         new_assigned = dict(self.assigned_exams)
-        new_assigned[exam] = (period, room)
+        new_assigned[exam] = (period, room_info)
         new_state = ExamTimetableState(self.problem, new_assigned)
         
         # Update room fullness if exam is exclusive
         if exam.exclusive:
-            new_state.problem.room_period_full_dictionary[(room, period)] = True
+            if isinstance(room_info, list):
+                for room in room_info:
+                    new_state.problem.room_period_full_dictionary[(room, period)] = True
+            else:
+                new_state.problem.room_period_full_dictionary[(room_info, period)] = True
             
         return new_state
     
-    def _update_saturation(self, assigned_exam_id, period):
-        # Update saturation degrees for unassigned exams
+    def _update_saturation(self, assigned_exam_id, period):      # Update saturation degrees for unassigned exams
         for exam_id in self.unassigned_exams:
             if self.problem.clash_matrix[assigned_exam_id, exam_id] > 0:
                 if period not in self.adjacent_periods[exam_id]:
@@ -112,19 +158,16 @@ class TimetableNode:
         self.action = action  # Action that led to this state
         self.children = []
         self.visits = 0
-        self.value = 0  # Lower value = better timetable (minimization)
+        self.value = 0  # Lower value = better timetable
         self.untried_actions = self.state.get_legal_actions()
         
-    def is_fully_expanded(self):
-        """Check if all possible child nodes have been created."""
+    def is_fully_expanded(self):      # Check if all possible child nodes have been created
         return len(self.untried_actions) == 0
         
-    def is_terminal(self):
-        """Check if this node represents a terminal state."""
+    def is_terminal(self):      # Check if this node represents a terminal state
         return self.state.is_terminal()
         
-    def expand(self):
-        """Create a new child node from an untried action."""
+    def expand(self):      # Creation of a new child node from an untried action
         if not self.untried_actions:
             return None
             
@@ -139,8 +182,7 @@ class TimetableNode:
         self.children.append(child)
         return child
         
-    def best_child(self, exploration_weight=1.0):
-        """Select the best child node using UCB1 formula for minimization."""
+    def best_child(self, exploration_weight=1.0):      # Selection of best child node using UCB1 formula for minimization
         if not self.children:
             return None
             
@@ -154,8 +196,7 @@ class TimetableNode:
         return min(self.children, key=ucb_score)
 
 
-def select_node(node):
-    """Select a node for expansion using tree policy."""
+def select_node(node):      # Selection of node for expansion using tree policy
     while not node.is_terminal():
         if not node.is_fully_expanded():
             return node
@@ -166,16 +207,14 @@ def select_node(node):
     return node
 
 
-def backpropagate(node, result):
-    """Update node statistics going up the tree."""
+def backpropagate(node, result):      # Update of node values going up the tree
     while node is not None:
         node.visits += 1
         node.value += result
         node = node.parent
 
 
-def simulate(state):
-    """Run a heuristic simulation from the given state to completion and return a score."""
+def simulate(state):      # Heuristic simulation from the given state to completion
     # Deep copy to avoid modifying the original
     current_state = copy.deepcopy(state)
     
@@ -196,6 +235,9 @@ def simulate(state):
             period for period in current_state.problem.periods
             if feasibility_tester.feasible_period(solution, exam, period)
         ]
+
+        if exam.number == 1:
+            print(feasible_periods)
         
         # Select period - either best available or random if none are feasible
         if not feasible_periods:
@@ -251,15 +293,19 @@ def simulate(state):
 
 
 def mcts_search(problem, time_budget=7200):
-    """Run MCTS for examination timetabling."""
     # Initialize with empty timetable
     initial_state = ExamTimetableState(problem)
     root = TimetableNode(initial_state)
     best_score = sys.maxsize
     end_time = time.time() + time_budget
-    
+    iteration = 0
     try:
+        print("Starting Search")
         while time.time() < end_time:
+            iteration += 1
+            if iteration % 100 == 0:
+                print(f"Iteration {iteration}, best score: {best_score}")
+
             # 1. Selection
             node = select_node(root)
             
@@ -272,9 +318,9 @@ def mcts_search(problem, time_budget=7200):
             
             # 3. Simulation
             score, data = simulate(node.state)
-            print(score)
             if score == 0: break
             elif score < best_score:
+                print(f"New best solution: old_best_score={best_score} -> new_best_score={score}")
                 best_score = score
                 best_data = data 
             
@@ -285,29 +331,7 @@ def mcts_search(problem, time_budget=7200):
         print("Keyboard break")
 
     # Return feasible solution found during simulation
-    if score == 0:
-        return data
-    
-    # Return best solution found down the tree
-    if not root.children:
-        return None
-        
-    # For minimization, select child with lowest average value
-    best_child = min(root.children, key=lambda c: c.value / max(c.visits, 1))
-    
-    # To get the full solution, follow the best path to a terminal node
-    current_node = best_child
-    while current_node.children:
-        current_node = min(current_node.children, key=lambda c: c.value / max(c.visits, 1))
-
-    # If terminal node does not equal all exams assigned, then best simulation data is returned
-    if not current_node.state.is_terminal():
-        return best_data
-    
-    # Convert to solution format
-    solution = Solution(problem)
-    solution.fill(current_node.state.assigned_exams)
-    return solution.dictionary_to_list()
+    return best_data
 
 
 def run_monte_carlo(input_file, output_file):
@@ -322,7 +346,11 @@ def run_monte_carlo(input_file, output_file):
     # Write results to file
     with open(output_file, "w") as file:
         for booking in solution_data:
-            file.write(f"{(booking.exam.number, booking.period.number, booking.room.number)}\n")
+            if hasattr(booking.rooms, '__iter__') and not isinstance(booking.rooms, str):
+                room_numbers = [room.number for room in booking.rooms]
+                file.write(f"{(booking.exam.number, booking.period.number, room_numbers)}\n")
+            else:
+                file.write(f"{(booking.exam.number, booking.period.number, booking.rooms.number)}\n")
         file.write(f"Hard constraints -> {e_t_solution.distance_to_feasibility()}\n")
         file.write(f"Conflicting exams -> {e_t_solution.conflicting_exams()}\n")
         file.write(f"Overbooked periods -> {e_t_solution.overbooked_periods()}\n")
