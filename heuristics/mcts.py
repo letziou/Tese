@@ -10,20 +10,20 @@ class ExamTimetableState:
     def __init__(self, problem, assigned_exams=None):
         self.problem = problem  # ITC2007 problem instance
         self.assigned_exams = assigned_exams or {}
+
+        self.period_remaining_capacity = self.problem.period_capacity
         
         # DSatur data structures
         self.num_exams = len(problem.exams)
         self.unassigned_exams = set(range(self.num_exams))
-        if assigned_exams:
-            for exam in assigned_exams:
-                self.unassigned_exams.remove(exam.number)
         self.saturation_degrees = [0] * self.num_exams  # number of distinct adjacent periods
         self.adjacent_periods = [set() for _ in range(self.num_exams)]  # periods used by adjacent exams
-        
-        # Update saturation for already assigned exams
+                
         if assigned_exams:
             for exam, (period, _) in assigned_exams.items():
-                self._update_saturation(exam.number, period)
+                self.unassigned_exams.remove(exam.number)      # Remove exams already assigned
+                self.period_remaining_capacity[period] -= len(exam.students)      # Update period capacity for exam assigned
+                self._update_saturation(exam.number, period)      # Update saturation for already assigned exams
     
     def is_terminal(self):
         return len(self.unassigned_exams) == 0
@@ -219,7 +219,6 @@ def simulate(state):      # Heuristic simulation from the given state to complet
     current_state = copy.deepcopy(state)
     
     solution = Solution(current_state.problem)
-    solution.fill(current_state.assigned_exams)
     feasibility_tester = FeasibilityTester(current_state.problem)
     
     # Heuristic simulation
@@ -229,21 +228,41 @@ def simulate(state):      # Heuristic simulation from the given state to complet
             break
             
         exam = current_state.problem.exams[exam_id]
+        solution.fill(current_state.assigned_exams)
+        students_needed = len(exam.students)
         
-        # Find feasible periods for this exam
-        feasible_periods = [
-            period for period in current_state.problem.periods
-            if feasibility_tester.feasible_period(solution, exam, period)
-        ]
+        sorted_periods = sorted(current_state.problem.periods, key=lambda p:(
+                                    current_state.period_remaining_capacity[p] >= students_needed,
+                                    current_state.period_remaining_capacity[p]
+                                ), reverse=True)
+        
+        feasible_periods = []
+        for period in sorted_periods:
+            if current_state.period_remaining_capacity[period] >= students_needed and feasibility_tester.feasible_period(solution, exam, period):
+                feasible_periods.append(period)
 
-        if exam.number == 1:
-            print(feasible_periods)
-        
-        # Select period - either best available or random if none are feasible
-        if not feasible_periods:
-            period = random.choice(current_state.problem.periods)
-        else:
-            # Score periods by conflict minimization
+        if not feasible_periods:      # If no periods have enough capacity, trying with any remaining capacity
+            for period in sorted_periods:
+                if feasibility_tester.feasible_period(solution, exam, period):
+                    feasible_periods.append(period)
+
+            if not feasible_periods:      # If there are still no periods choose random
+                period = random.choice(current_state.problem.periods)
+            else:      # Scoring periods by conflict minimization
+                period_scores = []
+                for period in feasible_periods:
+                    conflict_count = 0
+                    for adj_exam in range(current_state.num_exams):
+                        if current_state.problem.clash_matrix[exam_id, adj_exam] > 0:
+                            for assigned_exam, (assigned_period, _) in current_state.assigned_exams.items():
+                                if assigned_exam.number == adj_exam and assigned_period == period:
+                                    conflict_count += 1
+                    period_scores.append((period, conflict_count))
+                
+                period_scores.sort(key=lambda x: x[1])  # Sort by lowest conflict count
+                period = period_scores[0][0]
+
+        else:      # Scoring periods by conflict minimization and remaining capacity
             period_scores = []
             for period in feasible_periods:
                 conflict_count = 0
@@ -252,37 +271,18 @@ def simulate(state):      # Heuristic simulation from the given state to complet
                         for assigned_exam, (assigned_period, _) in current_state.assigned_exams.items():
                             if assigned_exam.number == adj_exam and assigned_period == period:
                                 conflict_count += 1
-                period_scores.append((period, conflict_count))
+                
+                capacity_score = current_state.period_remaining_capacity[period] / max(students_needed, 1)
+                combined_score = conflict_count - (0.1 * capacity_score)
+                period_scores.append((period, combined_score))
             
             period_scores.sort(key=lambda x: x[1])  # Sort by lowest conflict count
             period = period_scores[0][0]
         
-        # Select room - prefer one with capacity close to exam size
-        feasible_rooms = []
-        room_selected = None
-        
-        for room in current_state.problem.rooms_exam_dictionary[exam]:
-            if current_state.problem.room_period_full_dictionary.get((room, period), False):
-                continue
-                
-            room_capacity = feasibility_tester.current_room_capacity(solution, period, room)
-            if room_capacity < current_state.problem.smallest_exam:
-                continue
-                
-            if feasibility_tester.feasible_room(solution, exam, period, room):
-                if room_capacity == len(exam.students):
-                    room_selected = room
-                    break
-                feasible_rooms.append((room, room_capacity))
-        
-        if not feasible_rooms and room_selected is None:  
-            # If no feasible room, pick random room
-            room_selected = random.choice(current_state.problem.rooms)
-        
+        room_selected = current_state._find_single_room(solution, exam, period, feasibility_tester)      # First single room try
+
         if room_selected is None:
-            # Sort by smallest capacity and choose first one
-            feasible_rooms.sort(key=lambda x: x[1])  
-            room_selected = feasible_rooms[0][0]
+            room_selected = current_state._find_multiple_rooms(solution, exam, period, feasibility_tester)      # Then multiples
         
         # Apply action
         action = (exam, period, room_selected)
@@ -314,11 +314,17 @@ def mcts_search(problem, time_budget=7200):
                 child = node.expand()
                 if child:
                     node = child
-            else: break
+            else: 
+                print("No more expansion steps")
+                break
             
             # 3. Simulation
             score, data = simulate(node.state)
-            if score == 0: break
+            if score == 0: 
+                print("Found feasible solution")
+                best_score = score
+                best_data = data 
+                break
             elif score < best_score:
                 print(f"New best solution: old_best_score={best_score} -> new_best_score={score}")
                 best_score = score

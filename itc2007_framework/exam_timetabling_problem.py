@@ -1,7 +1,7 @@
 import re
 import numpy as np
 import sys
-from typing import List
+from typing import List, Dict
 from datetime import date, time
 from .exam import Exam
 from .period import Period
@@ -18,9 +18,8 @@ class ExamTimetablingProblem:
         self.period_hard_constraints = period_hard_constraints          # Hard Constraints associated with periods
         self.room_hard_constraints = room_hard_constraints              # Hard Constraints associated with rooms
         self.institutional_weightings = institutional_weightings        # Institutional weightings for soft constraints
-        self.smallest_exam = self.check_smallest_exam()
         self.room_period_full_dictionary = self.dictionary_room_period()
-        self.rooms_exam_dictionary = self.check_rooms_exam_dictionary()
+        self.period_capacity = self.calculate_period_capacities()
 
         # Initializing clash matrix
         num_exams = len(exams)
@@ -166,15 +165,12 @@ class ExamTimetablingProblem:
         
         return weightings
     
-    def check_smallest_exam(self) -> int:
-        smallest = sys.maxsize
-        for exam in self.exams:
-            capacity = len(exam.students)
-            if capacity < smallest:
-                smallest = capacity
-        
-        if smallest == sys.maxsize: smallest = 0
-        return smallest
+    def calculate_period_capacities(self) -> Dict[Period, int]:
+        period_capacities = {}
+        for period in self.periods:
+            total_capacity = sum(room.capacity for room in self.rooms)
+            period_capacities[period] = total_capacity
+        return period_capacities
     
     def dictionary_room_period(self):
         return {(room, period): False for room in self.rooms for period in self.periods}
@@ -203,6 +199,13 @@ class ExamTimetablingProblem:
     def exams_with_type(self, period_constraint: str, exam_number: int) -> List[PeriodHardConstraint]:      # Returns a list of constraints of a specific type involving the exam
         return [constraint for constraint in self.period_hard_constraints if constraint.constraint_type == period_constraint and
                 (constraint.exam_one == exam_number or constraint.exam_two == exam_number)]
+    
+    def all_exams_with_coincidence(self):
+        constraints = []
+        for constraint in self.period_hard_constraints:
+            if constraint.constraint_type == "EXAM_COINCIDENCE":
+                constraints.append((constraint.exam_one, constraint.exam_two))
+        return constraints
     
     def exams_with_coincidence(self, exam: Exam) -> List[Exam]:      # Returns a list of exams that are chained together
         exam_numbers = [exam.number]
