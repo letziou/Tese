@@ -79,6 +79,11 @@ class Solution:
         solution = ExamTimetablingSolution(self.problem, bookings)
         return solution.distance_to_feasibility_period()
     
+    def calculate_softs(self) -> int:
+        bookings = self.dictionary_to_list()
+        solution = ExamTimetablingSolution(self.problem, bookings)
+        return solution.soft_constraint_violations()
+    
     def fill(self, dictionary):
         # Clearing existing bookings and pre_associations
         self.bookings = {}

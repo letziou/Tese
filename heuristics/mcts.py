@@ -64,17 +64,32 @@ class ExamTimetableState:
         solution = Solution(self.problem)
         solution.fill(self.assigned_exams)
         feasibility_tester = FeasibilityTester(self.problem)
-
+        linked_exams = self.problem.exams_with_coincidence(exam)
         actions = []
-        for period in self.problem.periods:
-            if feasibility_tester.feasible_period(solution, exam, period):
-                single_room = self._find_single_room(solution, exam, period, feasibility_tester)
-                if single_room:
-                    actions.append((exam, period, single_room))
-                else:
-                    multiple_rooms = self._find_multiple_rooms(solution, exam, period, feasibility_tester)
-                    if multiple_rooms:
-                        actions.append((exam, period, multiple_rooms))
+
+        if len(linked_exams) > 1:
+            for linked_exam in linked_exams:
+                if linked_exam != exam and linked_exam.number not in self.unassigned_exams:
+                    print(linked_exam not in self.unassigned_exams)
+                    linked_period = self.assigned_exams[linked_exam.number][0]
+                    single_room = self._find_single_room(solution, exam, linked_period, feasibility_tester)
+                    if single_room:
+                        actions.append((exam, linked_period, single_room))
+                    else:
+                        multiple_rooms = self._find_multiple_rooms(solution, exam, linked_period, feasibility_tester)
+                        if multiple_rooms:
+                            actions.append((exam, linked_period, multiple_rooms))
+
+        elif not actions:
+            for period in self.problem.periods:
+                if feasibility_tester.feasible_period(solution, exam, period):
+                    single_room = self._find_single_room(solution, exam, period, feasibility_tester)
+                    if single_room:
+                        actions.append((exam, period, single_room))
+                    else:
+                        multiple_rooms = self._find_multiple_rooms(solution, exam, period, feasibility_tester)
+                        if multiple_rooms:
+                            actions.append((exam, period, multiple_rooms))
         
         return actions
     
@@ -289,14 +304,15 @@ def simulate(state):      # Heuristic simulation from the given state to complet
         current_state = current_state.apply_action(action)
         
     solution.fill(current_state.assigned_exams)
-    return (solution.calculate_score(), solution.dictionary_to_list())
+    return (solution.calculate_score(), solution.calculate_softs(), solution.dictionary_to_list())
 
 
 def mcts_search(problem, time_budget=7200):
     # Initialize with empty timetable
     initial_state = ExamTimetableState(problem)
     root = TimetableNode(initial_state)
-    best_score = sys.maxsize
+    f_best_score , inf_best_score = None, None
+    singleton = False
     end_time = time.time() + time_budget
     iteration = 0
     try:
@@ -304,7 +320,9 @@ def mcts_search(problem, time_budget=7200):
         while time.time() < end_time:
             iteration += 1
             if iteration % 100 == 0:
-                print(f"Iteration {iteration}, best score: {best_score}")
+                if not singleton:
+                    print(f"Iteration {iteration}, best infeasible solution: {inf_best_score}")
+                else: print(f"Iteration {iteration}, best feasible solution: {f_best_score}")
 
             # 1. Selection
             node = select_node(root)
@@ -319,24 +337,33 @@ def mcts_search(problem, time_budget=7200):
                 break
             
             # 3. Simulation
-            score, data = simulate(node.state)
-            if score == 0: 
-                print("Found feasible solution")
-                best_score = score
-                best_data = data 
-                break
-            elif score < best_score:
-                print(f"New best solution: old_best_score={best_score} -> new_best_score={score}")
-                best_score = score
+            score, soft_violations, data = simulate(node.state)
+            if score == 0:
+                if not singleton: 
+                    print(f"Found feasible solution at iteration {iteration}")
+                    singleton = True
+
+                if f_best_score == None or soft_violations < f_best_score:
+                    print(f"New best solution: old best feasible solution={f_best_score} -> new best feasible solution={soft_violations}")   
+                    f_best_score = soft_violations
+                    best_data = data 
+                
+            elif inf_best_score == None or score < inf_best_score:
+                print(f"New best solution: old best infeasible solution={inf_best_score} -> new best infeasible solution={score}")
+                inf_best_score = score
                 best_data = data 
             
             # 4. Backpropagation
-            backpropagate(node, score)
+            soft_score = soft_violations / 1000000
+            backpropagate(node, score+soft_score)
             
     except KeyboardInterrupt:
         print("Keyboard break")
 
     # Return feasible solution found during simulation
+    if not singleton:
+        print(f"Stopped at iteration {iteration}, with best infeasible solution=({inf_best_score})")
+    else: print(f"Stopped at iteration {iteration}, with best feasible solution=({f_best_score})")
     return best_data
 
 
