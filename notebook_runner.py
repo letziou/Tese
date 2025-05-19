@@ -6,7 +6,7 @@ numbers = [12, 4, 9]
 
 choice = sys.argv[1]
 if choice.lower() == "all":
-    for i in numbers:
+    for i in range(1,13):
         output_notebook = f"notebooks/notebook_set{i}.ipynb"
     
         params = {
