@@ -3,7 +3,7 @@ import papermill as pm
 notebook_path = "ITC07.ipynb"
 numbers = [12, 4, 9]
 
-choice = input("Would you like to run mcts on just one of the 12 datasets or all?\n")
+choice = sys.argv[1]
 if choice.lower() == "all":
     for i in numbers:
         output_notebook = f"notebooks/notebook_set{i}.ipynb"
