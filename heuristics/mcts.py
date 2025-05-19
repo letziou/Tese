@@ -80,7 +80,7 @@ class ExamTimetableState:
                         if multiple_rooms:
                             actions.append((exam, linked_period, multiple_rooms))
 
-        elif not actions:
+        if not actions:
             for period in self.problem.periods:
                 if feasibility_tester.feasible_period(solution, exam, period):
                     single_room = self._find_single_room(solution, exam, period, feasibility_tester)
