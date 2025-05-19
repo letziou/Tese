@@ -70,7 +70,6 @@ class ExamTimetableState:
         if len(linked_exams) > 1:
             for linked_exam in linked_exams:
                 if linked_exam != exam and linked_exam.number not in self.unassigned_exams:
-                    print(linked_exam not in self.unassigned_exams)
                     linked_period = self.assigned_exams[linked_exam.number][0]
                     single_room = self._find_single_room(solution, exam, linked_period, feasibility_tester)
                     if single_room:
@@ -224,7 +223,7 @@ def select_node(node):      # Selection of node for expansion using tree policy
             return node
         else:
             if node.best_child() is None:
-                return node.parent
+                return node
             node = node.best_child()
     return node
 
