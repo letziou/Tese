@@ -1,3 +1,4 @@
+import bisect
 import random
 import time
 import copy
@@ -178,15 +179,54 @@ class TimetableNode:
         self.children = []
         self.visits = 0
         self.untried_actions = self.state.get_legal_actions()
-        # DA logic
-        self.value = 0  # Lower value = better timetable
-        self.fea_count = 0
+        self.value = (0, 0)  # Lower value = better timetable
+        # Ranking System
+        self.sorted_children = []
+        self.child_rankings = {}
+        self.node_id = id(self)
+
+    def __lt__(self, other):
+        return self.node_id < other.node_id
+    
+    def __eq__(self, other):
+        return self.node_id == other.node_id
+    
+    def __hash__(self):
+        return hash(self.node_id)
         
     def is_fully_expanded(self):      # Check if all possible child nodes have been created
         return len(self.untried_actions) == 0
         
     def is_terminal(self):      # Check if this node represents a terminal state
         return self.state.is_terminal()
+    
+    def get_child_value(self, child):      # Function to return child value
+        if child.visits == 0:      # Try and force to visit unvisited childs
+            return (float('inf'), float('inf'))
+        else:
+            return (child.value[0] / child.visits, child.value[1] / child.visits)
+    
+    def update_rankings(self):      # Function to update all rankings
+        n = len(self.sorted_children)
+        for i, (_, _, child) in enumerate(self.sorted_children):
+            rank = i + 1
+            self.child_rankings[child] = 1 / rank
+    
+    def update_child_rank(self, child):
+        old_entry = None
+        new_value = self.get_child_value(child)
+
+        for i, (value, _, c) in enumerate(self.sorted_children):
+            if c is child:
+                old_entry = (i, (value, _, c))
+                break
+        
+        if old_entry:
+            self.sorted_children.pop(old_entry[0])
+        
+        bisect.insort(self.sorted_children, (new_value, child.node_id, child))
+
+        self.update_rankings()
         
     def expand(self):      # Creation of a new child node from an untried action
         if not self.untried_actions:
@@ -201,6 +241,11 @@ class TimetableNode:
         # Create new child node
         child = TimetableNode(new_state, parent=self, action=action)
         self.children.append(child)
+
+        child_value = self.get_child_value(child)
+        bisect.insort(self.sorted_children, (child_value, child.node_id, child))
+        self.update_rankings()
+
         return child
         
     def best_child(self, exploration_weight=1.0):      # Selection of best child node using UCB1 formula for minimization
@@ -208,16 +253,10 @@ class TimetableNode:
             return None
         
         def ucb_score(child):
-            # Basic UCB components
-            exploitation = child.value / max(child.visits, 1)
-            # Negative exploration component for minimization
+            exploitation = self.child_rankings.get(child, 0)
             exploration = -exploration_weight * math.sqrt(2 * math.log(self.visits) / max(child.visits, 1))
 
-            if child.fea_count > 0:
-                feasibility_bonus = child.fea_count / child.visits if child.visits > 0 else 0 * -10
-            else : feasibility_bonus = 0
-
-            return exploitation + exploration + feasibility_bonus
+            return -(exploitation + exploration)
             
         return min(self.children, key=ucb_score)
 
@@ -233,14 +272,19 @@ def select_node(node):      # Selection of node for expansion using tree policy
     return node
 
 
-def backpropagate(node, result, soft_result):      # Update of node values going up the tree
+def backpropagate(node, hard_result, soft_result):      # Update of node values going up the tree
     while node is not None:
         node.visits += 1
-        if result == 0:      # Feasible solution
-            node.fea_count += 1
-            node.value += soft_result / (10 ** len(str(soft_result)))
+        if hard_result == 0:      # Feasible solution
+            current_hard, current_soft = node.value
+            node.value = (current_hard + hard_result, current_soft + soft_result)
         else:
-            node.value += result
+            current_hard, current_soft = node.value
+            node.value = (current_hard + hard_result, current_soft)
+
+        if node.parent is not None:
+            node.parent.update_child_rank(node)
+
         node = node.parent
 
 
