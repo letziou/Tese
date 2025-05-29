@@ -10,7 +10,6 @@ class ExamTimetableState:
     def __init__(self, problem, assigned_exams=None):
         self.problem = problem  # ITC2007 problem instance
         self.assigned_exams = assigned_exams or {}
-
         self.period_remaining_capacity = self.problem.period_capacity
         
         # DSatur data structures
@@ -80,7 +79,13 @@ class ExamTimetableState:
                             actions.append((exam, linked_period, multiple_rooms))
 
         if not actions:
-            for period in self.problem.periods:
+            sorted_periods = sorted(      # Sorting periods according to higher capacity
+            self.problem.periods,
+            key=lambda p: self.period_remaining_capacity[p],
+            reverse=True
+            )
+
+            for period in sorted_periods:
                 if feasibility_tester.feasible_period(solution, exam, period):
                     single_room = self._find_single_room(solution, exam, period, feasibility_tester)
                     if single_room:
