@@ -70,7 +70,7 @@ class ExamTimetableState:
         if len(linked_exams) > 1:
             for linked_exam in linked_exams:
                 if linked_exam != exam and linked_exam.number not in self.unassigned_exams:
-                    linked_period = self.assigned_exams[linked_exam.number][0]
+                    linked_period = self.assigned_exams[linked_exam][0]
                     single_room = self._find_single_room(solution, exam, linked_period, feasibility_tester)
                     if single_room:
                         actions.append((exam, linked_period, single_room))
