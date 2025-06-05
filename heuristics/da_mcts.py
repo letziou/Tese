@@ -254,7 +254,7 @@ class TimetableNode:
         
         def ucb_score(child):
             exploitation = self.child_rankings.get(child, 0)
-            exploration = -exploration_weight * math.sqrt(2 * math.log(self.visits) / max(child.visits, 1))
+            exploration = exploration_weight * math.sqrt(2 * math.log(self.visits) / max(child.visits, 1))
 
             return -(exploitation + exploration)
             
