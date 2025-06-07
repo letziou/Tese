@@ -207,7 +207,6 @@ class TimetableNode:
             return (child.value[0] / child.visits, child.value[1] / child.visits)
     
     def update_rankings(self):      # Function to update all rankings
-        n = len(self.sorted_children)
         for i, (_, _, child) in enumerate(self.sorted_children):
             rank = i + 1
             self.child_rankings[child] = 1 / rank
