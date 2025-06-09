@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-@dataclass(frozen=True) # Makes the attributes immutable
+@dataclass(frozen=True)
 class Room:
     number: int     # Identifier of the room
     capacity: int   # Capacity of the room

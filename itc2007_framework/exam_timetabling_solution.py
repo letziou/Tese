@@ -29,9 +29,9 @@ class ExamTimetablingSolution:
     
     def distance_to_feasibility_period(self) -> int:   # Computation of number of hard constraint violations ignoring rooms
         return (
-            self.conflicting_exams() +
-            self.too_short_periods() +
-            self.period_constraint_violations()
+            self.conflicting_exams() +                  # Conflicting exams scheduled in the same period    (14)
+            self.too_short_periods() +                  # Period over-utilization                           (13)
+            self.period_constraint_violations()         # Period-related constraint  violations             (15, 16, 17)
         )
 
     def soft_constraint_violations(self) -> int:    # Computation of number of soft constraint violations

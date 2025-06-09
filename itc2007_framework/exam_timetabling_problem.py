@@ -1,6 +1,5 @@
 import re
 import numpy as np
-import sys
 from typing import List, Dict
 from datetime import date, time
 from .exam import Exam
@@ -12,14 +11,14 @@ from .institutional_weighting import InstitutionalWeighting
 
 class ExamTimetablingProblem:
     def __init__(self, exams: List[Exam], periods: List[Period], rooms: List[Room], period_hard_constraints: List[PeriodHardConstraint], room_hard_constraints: List[RoomHardConstraint], institutional_weightings: List[InstitutionalWeighting]):
-        self.exams = exams                                              # Exams to be booked
-        self.periods = periods                                          # Periods in which exams can be booked
-        self.rooms = rooms                                              # Rooms in which exams can be booked
-        self.period_hard_constraints = period_hard_constraints          # Hard Constraints associated with periods
-        self.room_hard_constraints = room_hard_constraints              # Hard Constraints associated with rooms
-        self.institutional_weightings = institutional_weightings        # Institutional weightings for soft constraints
-        self.room_period_full_dictionary = self.dictionary_room_period()
-        self.period_capacity = self.calculate_period_capacities()
+        self.exams = exams      # Exams to be booked
+        self.periods = periods      # Periods in which exams can be booked
+        self.rooms = rooms      # Rooms in which exams can be booked
+        self.period_hard_constraints = period_hard_constraints      # Hard Constraints associated with periods
+        self.room_hard_constraints = room_hard_constraints      # Hard Constraints associated with rooms
+        self.institutional_weightings = institutional_weightings      # Institutional weightings for soft constraints
+        self.room_period_full_dictionary = self.dictionary_room_period()      # Dicionary to track fullness of room-period pairs
+        self.period_capacity = self.calculate_period_capacities()      # Dicionary to track capacity of each period
 
         # Initializing clash matrix
         num_exams = len(exams)
@@ -31,7 +30,7 @@ class ExamTimetablingProblem:
                     self.clash_matrix[i, j] = len(set(exam_one.students) & set(exam_two.students))
         
         self.exclusion_in_matrix()      # Filling clash_matrix with EXCLUSION constraint
-        self.exams_exclusive()
+        self.exams_exclusive()      # Updating all exclusive boolean of exams with EXCLUSIVE constraint
 
     @classmethod
     def from_file(cls, file_path):  # Reads an ITC2007 problem instance from a file.

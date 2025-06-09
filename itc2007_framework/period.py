@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import date, time, datetime
 
-@dataclass(frozen=True) # Makes the attributes immutable
+@dataclass(frozen=True)
 class Period:
     number: int     # Identifier of the period
     date: date      # Date of the period

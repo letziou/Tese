@@ -36,7 +36,7 @@ class FeasibilityTester:
         if len(assign_exam.students) > capacity:      # Checking if exam can fit in room
             return False
 
-        if self.problem.room_exclusivity(assign_exam) and capacity != room.capacity:      # Checks if exam has room constraint and is fully available
+        if self.problem.room_exclusivity(assign_exam) and capacity != room.capacity:      # Checking if exam has room constraint and is fully available
             return False
 
         for constraint in self.problem.room_hard_constraints:      # Checking if other exams allocated have EXCLUSIVE

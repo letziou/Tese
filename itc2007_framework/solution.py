@@ -8,7 +8,6 @@ from .exam_timetabling_solution import ExamTimetablingSolution
 
 class Solution:
     def __init__(self, problem: ExamTimetablingProblem):
-        self.fitness = -1      # Initial fitness of solution
         self.problem = problem      # Contains problem from ExamTimetablingProblem containing the information on exams, rooms, periods, constraints and weightings
         self.bookings: Dict[Exam, tuple] = {}     # Dictionary for tracking exam-period-room assignments
         self.pre_association: Dict[Period, Dict[Room, List[Exam]]] = {      # Nested Dictionary that keeps track of which exams are pre-assigned to specific period-room combinations
@@ -17,7 +16,7 @@ class Solution:
         }
 
     def __str__(self) -> str:
-        return f"Solution(id={self.id}, fitness={self.fitness})"
+        return f"Solution(id={self.id})"
     
     def assigned_examinations(self) -> int:      # Returns number of assigned exams
         return len(self.bookings)
@@ -66,20 +65,20 @@ class Solution:
         
         return exams
     
-    def dictionary_to_list(self) -> List[Booking]:
+    def dictionary_to_list(self) -> List[Booking]:      # Returns a list of Booking objects
         return [Booking(exam, period, room) for exam, (period, room) in self.bookings.items()]
     
-    def calculate_score(self) -> int:
+    def calculate_score(self) -> int:      # Returns the feasibility score
         bookings = self.dictionary_to_list()
         solution = ExamTimetablingSolution(self.problem, bookings)
         return solution.distance_to_feasibility()
     
-    def calculate_score_periods(self) -> int:
+    def calculate_score_periods(self) -> int:      # Returns the feasibility score of period constraints
         bookings = self.dictionary_to_list()
         solution = ExamTimetablingSolution(self.problem, bookings)
         return solution.distance_to_feasibility_period()
     
-    def calculate_softs(self) -> int:
+    def calculate_softs(self) -> int:      # Returns the fitness of the solution
         bookings = self.dictionary_to_list()
         solution = ExamTimetablingSolution(self.problem, bookings)
         return solution.soft_constraint_violations()

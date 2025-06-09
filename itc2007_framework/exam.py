@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
-@dataclass(frozen=True) # Makes the attributes immutable
+@dataclass(frozen=True)
 class Exam:
     number: int             # Identifier of the exam.
     duration: int           # Duration of the exam.
