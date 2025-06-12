@@ -247,7 +247,7 @@ class TimetableNode:
 
         return child
         
-    def best_child(self, exploration_weight=0.1):      # Selection of best child node using UCB1 formula for minimization
+    def best_child(self, exploration_weight=0.01):      # Selection of best child node using UCB1 formula for minimization
         if not self.children:
             return None
         
