@@ -472,6 +472,14 @@ def main():
     elif choice.lower() == "instances":
         choice = input("Which instance?\n")
         run_monte_carlo(f"../instances/art0{choice.lower()}.exam", f"../solutions/instance_solution_{choice.lower()}.txt")
+    elif choice.lower() == "fcup":
+        number = sys.argv[2]
+        if number.lower() == "all":
+            for i in range(1,3):
+                print(f"Fcup dataset {i}")
+                run_monte_carlo(f"../fcup_instance/exam_fcup_set{i}.exam", f"../solutions/fcup_solution_{i}.txt")
+        else:
+            run_monte_carlo(f"../fcup_instance/exam_fcup_set{number.lower()}.exam", f"../solutions/fcup_solution_{number.lower()}.txt")
     else:
         run_monte_carlo(f"../datasets/exam_{choice.lower()}.exam", f"../solutions/solution_{choice.lower()}.txt")
 
