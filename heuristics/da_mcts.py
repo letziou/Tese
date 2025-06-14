@@ -463,6 +463,13 @@ def run_monte_carlo(input_file, output_file):
 
 def main():
     choice = sys.argv[1]
+    if choice.lower() == "fcup-all":
+        for i in range(1,13):
+            print(f"Dataset {i}")
+            run_monte_carlo(f"../datasets/exam_comp_set{i}.exam", f"../solutions/solution_{i}.txt")
+        for j in range(1,3):
+                print(f"Fcup dataset {i+j}")
+                run_monte_carlo(f"../fcup_instance/exam_fcup_set{j}.exam", f"../solutions/fcup_solution_{j}.txt")
     if choice.lower() == "all":
         for i in range(1,13):
             print(f"Dataset {i}")
