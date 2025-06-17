@@ -462,33 +462,67 @@ def run_monte_carlo(input_file, output_file):
 
 
 def main():
-    choice = sys.argv[1]
-    if choice.lower() == "fcup-all":
-        for i in range(1,13):
-            print(f"Dataset {i}")
-            run_monte_carlo(f"../datasets/exam_comp_set{i}.exam", f"../solutions/solution_{i}.txt")
-        for j in range(1,3):
+    choice = sys.argv[1].lower()
+
+    match choice:
+        case "fcup-all":
+            print("Running dataset 12")
+            run_monte_carlo(
+                "../datasets/exam_comp_set12.exam",
+                "../solutions/solution_12.txt"
+            )
+            for j in range(1, 3):
                 print(f"Fcup dataset {j}")
-                run_monte_carlo(f"../fcup_instance/exam_fcup_set{j}.exam", f"../solutions/fcup_solution_{j}.txt")
-    if choice.lower() == "all":
-        for i in range(1,13):
-            print(f"Dataset {i}")
-            run_monte_carlo(f"../datasets/exam_comp_set{i}.exam", f"../solutions/solution_{i}.txt")
-    elif choice.lower().isdigit():
-        run_monte_carlo(f"../datasets/exam_comp_set{choice.lower()}.exam", f"../solutions/solution_{choice.lower()}.txt")
-    elif choice.lower() == "instances":
-        choice = input("Which instance?\n")
-        run_monte_carlo(f"../instances/art0{choice.lower()}.exam", f"../solutions/instance_solution_{choice.lower()}.txt")
-    elif choice.lower() == "fcup":
-        number = sys.argv[2]
-        if number.lower() == "all":
-            for i in range(1,3):
-                print(f"Fcup dataset {i}")
-                run_monte_carlo(f"../fcup_instance/exam_fcup_set{i}.exam", f"../solutions/fcup_solution_{i}.txt")
-        else:
-            run_monte_carlo(f"../fcup_instance/exam_fcup_set{number.lower()}.exam", f"../solutions/fcup_solution_{number.lower()}.txt")
-    else:
-        run_monte_carlo(f"../datasets/exam_{choice.lower()}.exam", f"../solutions/solution_{choice.lower()}.txt")
+                run_monte_carlo(
+                    f"../fcup_instance/exam_fcup_set{j}.exam",
+                    f"../solutions/fcup_solution_{j}.txt"
+                )
+
+        case "all":
+            for i in range(1, 13):
+                print(f"Dataset {i}")
+                run_monte_carlo(
+                    f"../datasets/exam_comp_set{i}.exam",
+                    f"../solutions/solution_{i}.txt"
+                )
+
+        case "instances":
+            instance_choice = input("Which instance?\n").lower()
+            run_monte_carlo(
+                f"../instances/art0{instance_choice}.exam",
+                f"../solutions/instance_solution_{instance_choice}.txt"
+            )
+
+        case "fcup":
+            if len(sys.argv) < 3:
+                print("Please specify a FCUP instance number or 'all'")
+                return
+
+            number = sys.argv[2].lower()
+            if number == "all":
+                for i in range(1, 3):
+                    print(f"Fcup dataset {i}")
+                    run_monte_carlo(
+                        f"../fcup_instance/exam_fcup_set{i}.exam",
+                        f"../solutions/fcup_solution_{i}.txt"
+                    )
+            else:
+                run_monte_carlo(
+                    f"../fcup_instance/exam_fcup_set{number}.exam",
+                    f"../solutions/fcup_solution_{number}.txt"
+                )
+
+        case _ if choice.isdigit():
+            run_monte_carlo(
+                f"../datasets/exam_comp_set{choice}.exam",
+                f"../solutions/solution_{choice}.txt"
+            )
+
+        case _:
+            run_monte_carlo(
+                f"../datasets/exam_{choice}.exam",
+                f"../solutions/solution_{choice}.txt"
+            )
 
 
 if __name__ == "__main__":
