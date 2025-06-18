@@ -466,11 +466,12 @@ def main():
 
     match choice:
         case "fcup-all":
-            print("Running dataset 12")
-            run_monte_carlo(
-                "../datasets/exam_comp_set12.exam",
-                "../solutions/solution_12.txt"
-            )
+            for i in range(1, 13):
+                print(f"Dataset {i}")
+                run_monte_carlo(
+                    f"../datasets/exam_comp_set{i}.exam",
+                    f"../solutions/solution_{i}.txt"
+                )
             for j in range(1, 3):
                 print(f"Fcup dataset {j}")
                 run_monte_carlo(
