@@ -405,13 +405,13 @@ def mcts_search(problem, time_budget=7200):
                     singleton = True
 
                 if f_best_score == None or soft_score < f_best_score:
-                    print(f"New best solution: old best feasible solution={f_best_score} -> new best feasible solution={soft_score} with time elapsed: {elapsed:.1f}s")   
+                    print(f"New best solution at iteration {iteration}: old best feasible solution={f_best_score} -> new best feasible solution={soft_score} with time elapsed: {elapsed:.1f}s")   
                     f_best_score = soft_score
                     best_data = data 
                 
             elif inf_best_score == None or score < inf_best_score:
                 elapsed = time.time() - start_time
-                print(f"New best solution: old best infeasible solution={inf_best_score} -> new best infeasible solution={score} with time elapsed: {elapsed:.1f}s")
+                print(f"New best solution at iteration {iteration}: old best infeasible solution={inf_best_score} -> new best infeasible solution={score} with time elapsed: {elapsed:.1f}s")
                 inf_best_score = score
                 best_data = data 
             
