@@ -141,10 +141,8 @@ class ExamTimetablingSolution:
         if weighting is None:       # If weight is not defined then penalty is 0
             return 0
         
-        for booking_a in self.bookings:
-            for booking_b in self.bookings:
-                if booking_a == booking_b:      # Ignoring self comparison
-                    continue
+        for i, booking_a in enumerate(self.bookings):
+            for booking_b in self.bookings[i+1:]:
 
                 in_a_row = abs(booking_a.period.number - booking_b.period.number) == 1      # Checking if periods are next to each other
                 same_day = booking_a.period.date == booking_b.period.date       # Checking if date is the same
@@ -160,10 +158,8 @@ class ExamTimetablingSolution:
         if weighting is None:       # If weight is not defined then penalty is 0
             return 0
         
-        for booking_a in self.bookings:
-            for booking_b in self.bookings:
-                if booking_a == booking_b:      # Ignoring self comparison
-                    continue
+        for i, booking_a in enumerate(self.bookings):
+            for booking_b in self.bookings[i+1:]:
 
                 not_in_a_row = abs(booking_a.period.number - booking_b.period.number) != 1      # Checking if periods are not next to each other
                 same_day = booking_a.period.date == booking_b.period.date       # Checking if date is the same

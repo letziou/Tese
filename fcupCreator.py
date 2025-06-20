@@ -78,20 +78,38 @@ def file_print_rooms(rooms, file_path):
         for room, capacity in rooms.items():
             file.write(f"{room}, {capacity}, 0\n")
 
+def print_statistics(exams, rooms, semester):
+    all_students = set()
+    for students in exams.values():
+        all_students.update(students)
+        
+    num_exams = len(exams)
+    num_rooms = len(rooms)
+    
+    print(f"\n=== Statistics for Semester {semester} ===")
+    print(f"Number of different students: {len(all_students)}")
+    print(f"Number of exams: {num_exams}")
+    print(f"Number of rooms: {num_rooms}")
+
 if __name__ == "__main__":
     choice = sys.argv[1]
     if choice.lower() == "1":
         csv_file_path = "./fcup_instance/anonymized_S1.csv"
+        semester = 1
     else:
         csv_file_path = "./fcup_instance/anonymized_S2.csv"
+        semester = 2
     
     # Organize students by course
     exams = organizing_by_course(csv_file_path)
     
-    if exams:
-        if choice.lower() == "1": file_print_exams(exams, "./fcup_instance/studentsS1.txt")
-        else: file_print_exams(exams, "./fcup_instance/studentsS2.txt")
-    else: print("No data could be processed.")
+    #if exams:
+    #    if choice.lower() == "1": file_print_exams(exams, "./fcup_instance/studentsS1.txt")
+    #    else: file_print_exams(exams, "./fcup_instance/studentsS2.txt")
+    #else: print("No data could be processed.")
 
     rooms = room_capacities("./fcup_instance/salas_exames_12jun2025.xls")
-    file_print_rooms(rooms, "./fcup_instance/rooms.txt")
+    #file_print_rooms(rooms, "./fcup_instance/rooms.txt")
+
+    if exams and rooms:
+        print_statistics(exams, rooms, semester)
