@@ -28,7 +28,18 @@ elif choice.lower().isdigit():
     print(f"Running iteration {choice.lower()} with parameters: {params}")
     
     pm.execute_notebook(notebook_path, output_notebook, parameters=params)
+elif choice.lower() == "fcup":
+    for i in range(1,3):
+        output_notebook = f"notebooks/fcup_set{i}.ipynb"
 
+        params = {
+            "input_file_path": f"fcup_instance/exam_fcup_set{i}.exam",
+            "solution_file_path": f"solutions/fcup_notebook_solution_{i}.txt"
+        }
+        
+        print(f"Running iteration {i} with parameters: {params}")
+        
+        pm.execute_notebook(notebook_path, output_notebook, parameters=params)        
 else:
     output_notebook = f"notebooks/{choice.lower()}.ipynb"
     
