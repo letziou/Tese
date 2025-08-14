@@ -74,9 +74,11 @@ def room_capacities(file_path):
         return {}
 
 def file_print_rooms(rooms, file_path):
+    i = 0
     with open(file_path, "w") as file:
         for room, capacity in rooms.items():
-            file.write(f"{room}, {capacity}, 0\n")
+            file.write(f"{i}, {room}, {capacity}, 0\n")
+            i += 1
 
 def print_statistics(exams, rooms, semester):
     all_students = set()
@@ -109,7 +111,7 @@ if __name__ == "__main__":
     #else: print("No data could be processed.")
 
     rooms = room_capacities("./fcup_instance/salas_exames_12jun2025.xls")
-    #file_print_rooms(rooms, "./fcup_instance/rooms.txt")
+    file_print_rooms(rooms, "./fcup_instance/rooms.txt")
 
-    if exams and rooms:
-        print_statistics(exams, rooms, semester)
+    #if exams and rooms:
+    #    print_statistics(exams, rooms, semester)
